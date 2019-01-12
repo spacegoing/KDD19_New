@@ -25,6 +25,9 @@
 
 \newcommand{\mmqp}[3]{\textrm{\sc MaxMarginQP}\!\left(\{\by_t, #1\}_{t=1}^{T}, #2, #3\right)}
 
+% MISC
+\usepackage{textcomp}
+
 \begin{document}
 
 \title{End-to-end Multi-tasks Recurrent Neural Network and
@@ -65,34 +68,153 @@ output produced by the dvi file.
 \end{abstract}
 
 \section{Introduction}
-% The \textit{proceedings} are the records of a conference.
-% ACM seeks to give these conference by-products a uniform,
-% high-quality appearance.  To do this, ACM has some rigid
-% requirements for the format of the proceedings documents: there
-% is a specified format (balanced  double columns), a specified
-% set of fonts (Arial or Helvetica and Times Roman) in
-% certain specified sizes (for instance, 9 point for body copy),
-% a specified live area (18 $\times$ 23.5 cm [7" $\times$ 9.25"]) centered on
-% the page, specified\cite{hu2004} size of margins (2.54cm [1"] top and
-% bottom and 1.9cm [.75"] left and right; specified column width
-% (8.45cm [3.33"]) and gutter size (.083cm [.33"]).
+It has been a long known fact that stocks\textquotesingle price movement are
+highly correlated to other stocks rather than independent
+~\cite{lo1990contrarian,mech1993portfolio} and change in a
+non-synchronous
+way~\cite{lo1990contrarian,brennan1993investment}. This
+correlated yet non-synchronous price movement phenomenon is
+sometimes described as lead-lag
+relationship~\cite{hou2007industry} within a group of stocks.
+Different speed of information diffusion has been believed to be
+the main reason of lead-lag relationship
+\cite{lo1990contrarian,badrinath1995shepherds,mcqueen1996delayed}.
+When an information hits the market, some stocks\textquotesingle price tend to
+react faster than others do. Therefore, identification of those
+leading stocks and their lead-lag relationship to other lagging
+stocks will provide strong evidence in predicting the latter\textquotesingle s
+price movement direction.
 
-% The good news is, with only a handful of manual
-% settings\footnote{Two of these, the {\texttt{\char'134 numberofauthors}}
-% and {\texttt{\char'134 alignauthor}} commands, you have
-% already used; another, {\texttt{\char'134 balancecolumns}}, will
-% be used in your very last run of \LaTeX\ to ensure
-% balanced column heights on the last page.}, the \LaTeX\ document
-% class file handles all of this for you.
+There are three steps involved in utilizing lead-lag
+relationship: 1. Analyzing which group of stocks (industry,
+supply chain etc.) will be affected by newly arrived information
+and corresponding leading stocks; 2. Identifying lagging stocks
+in this group and modeling their relationships; 3. Predicting
+price movement of each stock by jointly considering group
+knowledge and individual stock\textquotesingle s price movement at current stage.
 
-% The remainder of this document is concerned with showing, in
-% the context of an ``actual'' document, the \LaTeX\ commands
-% specifically available for denoting the structure of a
-% proceedings paper, rather than with giving rigorous descriptions
-% or explanations of such commands.
+Step 1. is extremely difficult for an algorithm to automate using
+nowadays technologies. It requires an expert level understanding
+of the finance system and dynamics behind market news and stock
+price. Also there is lacking of training dataset. However,
+according to the well-known efficient market
+hypothesis~\cite{malkiel1970efficient}, stock price reflects all
+available market information. Therefore, informational stock
+price changes can be used as an proximity to market news arrival.
+The complexity of step 1 becomes pattern recognition of
+informational price changes in individual stock.
+% Therefore, the complexity of interpreting market news can be
+% approximated by observing latent pattern in individual stock
+% price changes.
+% todo: 我们可以通过观察股价变化，来估计哪些股票收到了新信息影响
+
+Economists have spent decades trying to use patterns hidden
+inside historical trading price and volume to predict future
+price movement~\cite{fama1966filter,jensen1967random}. Those
+models are called technical
+analysis~\cite{kirkpatrick2010technical}. However, most of those
+models have been proven stopped generating profitable signals
+since the early 1990s~\cite{park2007we}. On the other hand, since
+trading strategies based on technical analysis rules are public
+available and easy to replicate, informed institutional traders
+are motivated to manipulate market price and trap retail
+(individual) traders following their manipulated price to gain
+excess profit~\cite{sun2016decision}. Problem of pattern
+recognition in stock price series still remains open.
+
+To overcome those difficulties, we propose an end-to-end
+hierarchical multi-task~\cite{caruana1993multitask} approach to
+extract informational changes from raw market price without using
+any of hand-crafted features such as technical analysis
+indicators. Good performance on price prediction relies on rich
+representations and a multi-task framework can leverage
+complementary aspects from diverse tasks~\cite{sogaard2016deep}.
+Given raw market price data only contains 6 features (opening
+price, low price, high price, closing price, volume and amount)
+at each time interval, we leverage a hierarchical multi-task
+network to extract features on different tasks first and then
+concatenate those complementary feature vectors to predict final
+results.
+
+To model lead-lag relationships (step 2. and 3.), we propose a
+binary Markov Random Fields (MRFs) with weighted lower linear
+envelope as higher order energy
+function~\cite{Kohli:CVPR07,Nowozin:2011,Gould:ICML2011,gouldlearning}.
+In our implementation, we treat each stock as a node in MRFs and
+each stocks group which has lead-lag relationships as a maximum
+clique in MRFs. We use pre-defined industry classification
+list~\cite{ths} as prior domain knowledge of each stock\textquotesingle s
+belonging maximum clique. Finally, the complexity of modeling
+dynamics between leading and lagging stocks becomes encouraging
+consistency over large cliques under weighted lower linear
+envelope potentials. Logits from hierarchical networks are used
+as unary feature in MRFs. By minimizing energy function contains
+both unary and higher order features, we are able to predict each
+stock\textquotesingle s future price movement by jointly considering individual
+market price trending together with lead-lag relationships it
+has.
+
+We verify our methodology on Chinese stock market because
+it is generally considered less mature than other developed
+countries\textquotesingle thus potentially to be more
+profitable~\cite{bessembinder1995profitability}. Even though
+immature, \citename{fangyan2012} found that the average duration
+of information arrival-conduction-integration-release process is
+$4.04$ minutes. Therefore, a minute-level frequency model is
+mandatory to leverage from lead-lag relationship. To our best
+knowledge, our model is the first one demonstrating lead-lag
+relationship at minute-level frequency on Chinese stock market.
+
+Our main contributions are the following: (1) We propose a
+hierarchical multi-task architecture for learning stock price
+patterns without any hand-crafted features. (2) We propose the
+first model that encode lead-lag relationship among stocks using
+higher order MRFs to the best of our knowledge. (3) We design an
+algorithm to learn weighted lower linear envelope with latent
+variables as higher order energy function under latent structural
+SVMs framework. Adding latent variable into higher order function
+enables our model to learn much richer representation than
+previous study~\cite{gouldlearning}.
 
 \section{Related Works and Background}
 \label{sec:background}
+
+\textbf{Lead-lag Relationship} Lead-lag relationship has been
+found to be a long existence phenomenon in stock market. Many
+reasons can lead to this such as diffusion of information, sector
+(industry) rotation, investment style rotation, event driven
+trading and nonsynchronous trading
+\cite{lo1990contrarian,chordia2000trading,conrad1988time,hameed1997time}.
+Generally it is believed that lead-lag relationship is more
+prevalent for firms from the same industry
+\cite{hou2007industry}. This assumption give rise to our setting
+that we use pre-defined industry classification list \cite{ths}
+as prior domain knowledge of each stock\textquotesingle s belonging maximum
+clique.
+
+\textbf{Multi-task Learning} \citename{caruana1993multitask}
+shows that inductive knowledge learned from multiple tasks can
+transfer between tasks and help improving generalization on all
+tasks. Many works in Natural Language Processing (NLP) area take
+advantage of multi-task framework and achieves state-of-the-art
+performance while using simple models for each of these tasks
+\cite{sogaard2016deep,hashimoto2016joint}. However, as pointed
+out by many researchers
+\cite{caruana1993multitask,ruder2017overview}, there are lacking
+of theories on choosing a diverse set of tasks and hierarchical
+architecture of chosen tasks. Recent works
+\cite{sogaard2016deep,hashimoto2016joint} apply the intuition
+that the complexity of task should be increasing along with
+hierarchical level. We follow this intuition in our
+implementation. Because technical analysis indicators can be
+categorized into four categories (trend, momentum, volatility and
+volume)~\cite{kirkpatrick2010technical} and volume is included in
+market price data, we propose an architecture that using trend
+and volatility tasks as our lower level tasks and price movement
+classification (upward or downward) as higher level task. Other
+selection of tasks and hierarchical designations remain open for
+further research.
+
 
 \subsection{Attention Mechanism}
 \label{sec:attn}
@@ -960,8 +1082,9 @@ Our optimization algorithm is summarized in
 
 
 \newcommand{\newblock}{}
+\setcitestyle{numbers} % set the citation style to ``numbers''.
 \bibliographystyle{plainnat}
-\bibliography{Bibs/thesis,Bibs/long,Bibs/scene,Bibs/proposal}
+\bibliography{Bibs/thesis,Bibs/long,Bibs/scene,Bibs/proposal,Bibs/fin}
 
 % That's all folks!
 \end{document}
