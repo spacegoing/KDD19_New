@@ -218,33 +218,48 @@ classification (upward or downward) as higher level task. Other
 selection of tasks and hierarchical designations remain open for
 further research.
 
+\textbf{Graphical Model and Neural Networks} It has been known
+that neural networks are lacking of constraints enforcing label
+consistency. There are many efforts demonstrating this issue by
+combining CRFs and neural networks. From natural language
+processing community, \citename{collobert2011natural} proposed a
+CRF on top of feed-forward neural networks for constituency
+parsing task (Part-Of-Speech tagging e.g.). Due to the fixed
+sized window, their method only provides local information to CRF
+without long-term memory. For the same task,
+\citename{huang2015bidirectional} proposed a Bi-LSTM-CRF
+framework which utilizes both forward and backward information by
+using LSTM to extract features from raw text and make inference
+at a sentence level by using CRF. They achieved a more robust
+model and outperformed previous study. Later
+works~\cite{ma2016end,lample2016neural} follow their routine and
+improved bottom neural networks to encode both character-level
+and word-level features without using hand-crafted features.
+However, CRF they use still remains sequential. Computer vision
+community also put many efforts in combining benefits of Neural
+Networks and CRF \cite{chen2018deeplab,zheng2015conditional}.
+\citename{zheng2015conditional} formulated fully connected CRF
+with Gaussian edge potentials and mean-field inference as RNNs
+and integrated it into CNNs. The CRF-RNNs network can be
+optimized using standard back-propagation method.
 
-\subsection{Attention Mechanism}
-\label{sec:attn}
+One main drawback of all above frameworks is that they only use
+unary and pairwise potentials. To include higher-order
+potentials, \citename{arnab2016higher} extends previous work by
+designing two types of potentials which can be formulated into
+CNNs when using mean-field inference. However, mean-field
+inference is an approximation inference method and choices of
+potentials are very limited under this kind of formulation.
+\citename{witoonchart2017application} proposed a variety of
+construction of graphical model and neural networks. They use
+graph-cut like algorithm to calculate loss-augmented inference
+during forward propagation of graphical models and back-propagate
+the error learned with Structured SVMs \cite{Joachims:ML09} to
+CNNs. In this paper, we follow their back-propagation method and
+implement an end-to-end training framework for learning higher
+order MRFs and neural networks using latent structural SVMs
+\cite{yu2009learning} algorithm.
 
-An interesting problem in time series modeling is automatically
-selecting informational features. The Nonlinear autoregressive
-exogenous (NARX) model, for example, is a model that predict
-future value of a time series by using itself previous value
-together with other features temporal information. When the
-potential informational features pool is large, it is difficult
-for the model to select relevant features at each time step and
-encode long-range dependencies. \citename{qin2017dual} proposed a
-dual-stage attention mechanism to demonstrate these issues. Their
-main contribution is at the first stage. An attention mechanism
-is applied between the input temporal feature matrix and the
-first hidden layer. This input attention layer calculates
-attention weights for each feature at each time step $t$ by
-combining the information of each feature vector and the hidden
-state from first layer at time step $t-1$. Then the attention
-weights are applied to feature matrix to get a weighted input
-feature matrix at time step $t$. The second stage is a
-conventional attention layer which attends to all hidden states
-in the first layer. Their result outperforms previous
-state-of-the-art models on NASDAQ 100 Stock dataset. By employing
-a dual-stage attention mechanism, their model can not only solve
-long-range dependencies problem but also select informational
-features adaptively at each time step.
 
 \subsection{Markov Random Fields}
 \label{sec:MRF}
