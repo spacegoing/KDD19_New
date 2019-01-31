@@ -34,7 +34,7 @@
   Higher-order Markov Random Fields Learning for Stock Price
   Prediction}
 
-\numberofauthors{3}
+%\numberofauthors{3}
 
 \author{
 \alignauthor Chang Li \\
@@ -48,24 +48,14 @@
        \email{dacheng.tao@sydney.edu.au}
 }
 \date{15 Jan 2019}
-\maketitle
+
 
 \begin{abstract}
-This paper provides a sample of a LaTeX document for final submission
-to Sigkdd Explorations, the official newsletter of ACM Sigkdd. This is
-a modified version of the ACM Proceedings sample file.
+In this paper, ...
 
-The developers have tried to include every imaginable sort
-of ``bells and whistles", such as a subtitle, footnotes on
-title, subtitle and authors, as well as in the text, and
-every optional component (e.g. Acknowledgements, Additional
-Authors, Appendices), not to mention examples of
-equations, theorems, tables and figures.
-
-To make best use of this sample document, run it through \LaTeX\
-and BibTeX, and compare this source code with the printed
-output produced by the dvi file.
 \end{abstract}
+
+\maketitle
 
 \section{Introduction}
 
@@ -76,7 +66,7 @@ highly correlated to other stocks rather than independent
 ~\cite{lo1990contrarian,mech1993portfolio} and change in a
 non-synchronous
 way~\cite{lo1990contrarian,brennan1993investment}. This
-correlated yet non-synchronous price movement phenomenon is
+correlated yet asynchronous price movement phenomenon is
 sometimes described as lead-lag
 relationship~\cite{hou2007industry} within a group of stocks.
 Different speed of information diffusion has been believed to be
@@ -157,6 +147,8 @@ stock\textquotesingle s future price movement by jointly considering individual
 market price trending together with lead-lag relationships it
 has.
 
+\textbf{DJ comment1: whether high-order relationships between different stocks equals to led-lag relationship modeling. (delayed reaction/effect/correlation between different stocks)}
+
 We verify our methodology on Chinese stock market because
 it is generally considered less mature than other developed
 countries\textquotesingle thus potentially to be more
@@ -195,6 +187,8 @@ that we use pre-defined industry classification list \cite{ths}
 as prior domain knowledge of each stock\textquotesingle s belonging maximum
 clique.
 
+\textbf{DJ comment: please extend this part appropriately with more background}
+
 \textbf{Multi-task Learning} \citename{caruana1993multitask}
 shows that inductive knowledge learned from multiple tasks can
 transfer between tasks and help improving generalization on all
@@ -217,6 +211,11 @@ and volatility tasks as our lower level tasks and price movement
 classification (upward or downward) as higher level task. Other
 selection of tasks and hierarchical designations remain open for
 further research.
+
+\textbf{DJ Comment: the review of multi-task learning is not complete, please check earlier papers about multi-task learning and make this part more comprehensive I did not remember about the first paper, maybe it is this one: G. Obozinski, B. Taskar, and M. Jordan. Multi-task feature selection. Statistics Department, UC Berkeley,
+Tech. Rep, 2006. You should also cite several papers of this topic from Prof. Jieping Ye's group}
+% https://papers.nips.cc/paper/4729-multi-stage-multi-task-feature-learning.pdf
+
 
 \textbf{Graphical Model and Neural Networks} It has been known
 that neural networks are lacking of constraints enforcing label
@@ -242,6 +241,8 @@ Networks and CRF \cite{chen2018deeplab,zheng2015conditional}.
 with Gaussian edge potentials and mean-field inference as RNNs
 and integrated it into CNNs. The CRF-RNNs network can be
 optimized using standard back-propagation method.
+
+\textbf{DJ comment maybe we should should also review the progress on high-order MRFs/CRFs and highlight how our work differs from these. Not sure here yet}
 
 One main drawback of all above frameworks is that they only use
 unary and pairwise potentials. To include higher-order
