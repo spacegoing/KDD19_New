@@ -1103,17 +1103,58 @@ Our optimization algorithm is summarized in
 \section{Experiment}
 \label{sec:exp}
 
+In this section, we first introduce 3 stock datasets (index) and
+how we use them to construct our final input datasets. Then, we
+introduce the parameter settings of our model and other training
+details. Finally, we select four evaluation metrics and use them
+to demonstrate our framework's effectiveness by comparing with
+other baseline models.
+
 \subsection{Dataset}
 \label{sec:dataset}
 
-Momentum: Awesome Oscillator, Money Flow Index
-Volume: Chaikin Money Flow, On-balance volume mean
-Volatility: Bollinger Bands (Upper and Lower Bands)
-Trend: Average Directional Movement Index, Moving Average Convergence Divergence
+To demonstrate the effectiveness of higher order consistency, we
+choose three exclusive the most famous stock indexes on Chinese
+stock market to build our input datasets. Their index codes are:
+CSI (China Securities Index) 200, CSI 300 and CSI 500 which
+contain 200, 500 and 300 constituent stocks respectively. The CSI
+300 index selects most liquid A-share stocks. It aims to reflect
+the overall performance of China A-share market. The CSI 200 and
+500 index aims to reflect the overall performance of mid-to-large
+and small-to-mid capital A-shares respectively.
 
-240 a day,
-validation test dataset 5 million
-train dataset 40 million 2015-01-05 to 2017-05-31
+All these indexes are exclusive and are refined on a yearly
+basis. In this paper, we use fixed versions on 30-JAN-2015. We
+then collect their constituent stocks' minute-level data from
+05-JAN-2015 to 29-DEC-2017. On Chinese stock market each trading
+day has 3 trading hours. So there are 240 samples for each
+normally traded stock each day. During this period, there are
+some stocks de-listed from Chinese stock market (SZ000024,
+SH600485, SH600832 in CSI 200; SZ000693, SZ000748, SZ000982 in
+CSI 500; SH600485, SH600832, SZ000024, SH601299 in CSI 300).
+Therefore, in total we collect 197, 497 and 296 stocks during
+this period respectively. For each stock, the first $80\%$ days
+are used to construct the training set and the last $20\%$ days
+are used for testing set. Approximately training set and testing
+set contain 13 million and 3 million samples respectively.
+
+To demonstrate benefits of multi-task end-to-end learning over
+manually designed technical indicators, we also need to construct
+3 technical indicators datasets for those market price datasets
+we collected above.
+\begin{table}
+  \label{tab:ta}
+\centering
+\caption{Technical Indicators Selection}
+\begin{tabular}{|c|c|} \hline
+  Momentum& Awesome Oscillator, Money Flow Index\\ \hline
+  Volume& Chaikin Money Flow, On-balance volume mean\\ \hline
+  Volatility& Bollinger Bands (Upper and Lower Bands)\\ \hline
+  Trend& Average Directional Movement Index, Moving Average Convergence Divergence\\ \hline
+\end{tabular}
+\end{table}
+
+
 
 
 \newcommand{\newblock}{}
