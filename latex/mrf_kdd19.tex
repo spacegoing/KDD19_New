@@ -1,10 +1,29 @@
-\documentclass[sigconf, anonymous, review]{acmart}
-
+\documentclass[sigconf,anonymous,review]{acmart}
 % For citations
-\usepackage[sort,numbers]{StyFiles/natbib}
+%\usepackage[sort,numbers]{StyFiles/natbib}
+% \setcopyright{rightsretained}
+% \settopmatter{printacmref=false}
+
+%%
+\usepackage{graphicx}
+\usepackage{url}
+
+% \usepackage{pifont}
+% \newcommand{\cmark}{\text{\ding{51}}}
+% \newcommand{\xmark}{\text{\ding{55}}}
+% \usepackage{amssymb}
+% \newcommand{\RN}[1]{%
+%   \textup{\uppercase\expandafter{\romannumeral#1}}%
+% }
+% DOI
+%\acmDOI{10.475/123_4}
+% ISBN
+%\acmISBN{123-4567-24-567/08/06}
+
+%%
+
 \renewcommand{\citename}{\citet}
 \renewcommand{\cite}{\citep}
-\usepackage{StyFiles/natbibspacing}
 
 % For maths
 \usepackage{amssymb}
@@ -31,14 +50,20 @@
 \usepackage{booktabs}
 \usepackage{multirow}
 
+%Conference
+\acmConference[KDD 2019]{}{August 3-7 2019}{Anchorage, Alaska USA}
+\acmYear{1997}
+\copyrightyear{2018}
+\acmSubmissionID{1486}
+
 
 \begin{document}
 
-\title{ Multi-task Recurrent Neural Network and
-  Higher-order Markov Random Fields Learning for Stock Price
+\title[RNN Higer-order MRFs for stock price prediction]{Multi-task Recurrent Neural Network and
+  Higher-order Markov Random Fields for Stock Price
   Prediction}
 
-%\numberofauthors{3}
+% \numberofauthors{3}
 
 \author{
 \alignauthor Chang Li \\
@@ -56,27 +81,18 @@
 
 \begin{abstract}
   Stock price movement not only depends on individual stocks'
-  historical records, but also has complex hidden dynamics with
-  other correlated stocks. Little research has been done to
-  utilize both relationships. In this paper, we propose an
-  end-to-end deep neural networks and Markov Random Fields (MRFs)
-  framework. We first design a
-  multi-task hierarchical RNNs framework to extract informational
-  features from individual stock price sequence without any
-  hand-crafted knowledge. At the second stage, a binary MRFs with
-  unary and weighted lower linear envelope as higher-order energy
-  function is proposed to utilize both individual historical
-  information together with higher-order consistence
-  relationships among cliques of stocks. We also designed a
-  latent structural SVM algorithm for learning MRFs in a
-  polynomial number of iterations. Finally a sub-gradient
-  algorithm is used for end-to-end training neural networks and
-  MRFs. We conduct experiments on 3 of the most popular Chinese
-  stock market indexes and achieves the best accuracy over the
-  other baseline models. To our best knowledge, we are the first
-  work investigating intra-clique relationships by using
-  higher-order MRFs on stock price prediction.
+  historical records, but also has complex hidden dynamics associated with other correlated stocks. Despite a substantial amount of effort has been made to understand the principles of stock price movement, few has attempted to perform stock price prediction based upon
+  single stock's historical records as well as its correlated stocks. To this end, we present a multi-task recurrent neural network (RNN) and high-order Markov random fields (MRFs) to perform stock price prediction. Specifically, we first design a multi-task RNN framework to extract informative features from the raw market data of individual stock without considering any domain knowledge. Next, we employ binary MRFs with
+  unary as well as weighted lower linear envelope as the higher-order energy
+  function to capture the higher-order consistence within the same clique (group) of stocks. We also derived a latent structural SVM algorithm to learn high-order MRFs in a
+  polynomial number of iterations. Finally, a sub-gradient
+  algorithm is employed to perform end-to-end training of RNN and
+  high-order MRFs. We conduct thoroughly empirical studies based on three popular Chinese
+  stock market indexes and the proposed method outperforms baseline approaches. To the best of our knowledge, the proposed technique is the first one to
+  investigate intra-clique relationships with higher-order MRFs on stock price prediction.
 \end{abstract}
+
+\keywords{Deep Learning, Multi-variate time series prediction, Graphical Model}
 
 \maketitle
 
@@ -84,45 +100,24 @@
 \label{sec:intro}
 % lead lag 现象不是一直存在，个股趋势也非常重要
 
-It has been a long known fact that stocks\textquotesingle price movement are
-highly correlated to other stocks rather than independent
-~\cite{lo1990contrarian,mech1993portfolio} and change in a
-non-synchronous
-way~\cite{lo1990contrarian,brennan1993investment}. This
-correlated yet asynchronous price movement phenomenon is
-sometimes described as lead-lag
-relationship~\cite{hou2007industry} within a group of stocks.
+It has been well-known that single stock's price movement not only depends on its historical records, but also is highly correlated to other stocks~\cite{lo1990contrarian,mech1993portfolio} and may change in a non-synchronous
+manner~\cite{lo1990contrarian,brennan1993investment}. This correlated yet asynchronous price movement phenomenon is sometimes defined as lead-lag relationship~\cite{hou2007industry} within a group of stocks.
 Different speed of information diffusion has been believed to be
 the main reason of lead-lag relationship
 \cite{lo1990contrarian,badrinath1995shepherds,mcqueen1996delayed}.
 When an information hits the market, some stocks\textquotesingle price tend to
-react faster than others do. Therefore, identification of those
-leading stocks and their lead-lag relationship to other lagging
+react faster than others. Therefore, identification of those
+leading stocks and their lead-lag relationships to other lagging
 stocks will provide strong evidence in predicting the latter\textquotesingle s
 price movement direction.
 
-There are three steps involved in utilizing lead-lag
-relationship: 1. Analyzing which group of stocks (industry,
-supply chain etc.) will be affected by newly arrived information
-and corresponding leading stocks; 2. Identifying lagging stocks
-in this group and modeling their relationships; 3. Predicting
-price movement of each stock by jointly considering group
-knowledge and individual stock\textquotesingle s price movement at current stage.
+There are three key challenges in utilizing the lead-lag relationship: (1) Analyzing which group of stocks ($e.g.$, industry,
+supply chain, $etc.$) will be affected by newly arrived information
+and the corresponding leading stocks; (2) Identifying lagging stocks in this group and modeling their relationships; (3) Predicting
+price movement of each stock by jointly considering the knowledge in its correlated group and individual stock\textquotesingle s price movement at current stage.
 
-Step 1. is extremely difficult for an algorithm to automate using
-nowadays technologies. It requires an expert level understanding
-of the finance system and dynamics behind market news and stock
-price. Also there is lacking of training dataset. However,
-according to the well-known efficient market
-hypothesis~\cite{malkiel1970efficient}, stock price reflects all
-available market information. Therefore, informational stock
-price changes can be used as an proximity to market news arrival.
-The complexity of step 1 becomes pattern recognition of
-informational price changes in individual stock.
-% Therefore, the complexity of interpreting market news can be
-% approximated by observing latent pattern in individual stock
-% price changes.
-% todo: 我们可以通过观察股价变化，来估计哪些股票收到了新信息影响
+The first challenge is extremely difficult to resolve with an automatic algorithm. This is not only because it requires an expert level understanding of the finance system and the dynamics behind market news as well as stock price, but also due to lacking of training data. However, according to the well-known efficient market hypothesis~\cite{malkiel1970efficient}, stock price reflects all
+available market information. Therefore, informative stock price changes can be employed as an proximity to market news arrival. In this way, the complexity of the first challenge becomes detection of informative price changes in individual stock.
 
 Economists have spent decades trying to use patterns hidden
 inside historical trading price and volume to predict future
@@ -135,42 +130,28 @@ trading strategies based on technical analysis rules are public
 available and easy to replicate, informed institutional traders
 are motivated to manipulate market price and trap retail
 (individual) traders following their manipulated price to gain
-excess profit~\cite{sun2016decision}. Problem of pattern
-recognition in stock price series still remains open.
+excess profit~\cite{sun2016decision}.
 
-To overcome those difficulties, we propose an end-to-end
-hierarchical multi-task~\cite{caruana1993multitask} approach to
-extract informational changes from raw market price without using
+To overcome those problems, we employ an end-to-end
+hierarchical multi-task~\cite{caruana1993multitask} RNN to
+extract informative changes from raw market price without using
 any of hand-crafted features such as technical analysis
 indicators. Good performance on price prediction relies on rich
-representations and a multi-task framework can leverage
-complementary aspects from diverse tasks~\cite{sogaard2016deep}.
-Given raw market price data only contains 6 features (opening
-price, low price, high price, closing price, volume and amount)
-at each time interval, we leverage a hierarchical multi-task
-network to extract features on different tasks first and then
-concatenate those complementary feature vectors to predict final
-results.
+representations as well as the multi-task framework which can leverage
+complementary aspects from diverse tasks~\cite{sogaard2016deep}. Specifically, given the raw market price data which only contains 6 features ($i.e.$, opening
+price, low price, high price, closing price, volume, and amount) at each time interval, we leverage a hierarchical multi-task
+network to extract features on different tasks first and then concatenate those complementary feature vectors to make final prediction.
 
-To model lead-lag relationships (step 2. and 3.), we propose a
-binary Markov Random Fields (MRFs) with weighted lower linear
-envelope as higher order energy
-function~\cite{Kohli:CVPR07,Nowozin:2011,Gould:ICML2011,gouldlearning}.
-In our implementation, we treat each stock as a node in MRFs and
-each stocks group which has lead-lag relationships as a maximum
-clique in MRFs. We use pre-defined industry classification
-list~\cite{ths} as prior domain knowledge of each stock\textquotesingle s
-belonging maximum clique. Finally, the complexity of modeling
-dynamics between leading and lagging stocks becomes encouraging
-consistency over large cliques under weighted lower linear
-envelope potentials. Logits from hierarchical networks are used
-as unary feature in MRFs. By minimizing energy function contains
-both unary and higher order features, we are able to predict each
-stock\textquotesingle s future price movement by jointly considering individual
-market price trending together with lead-lag relationships it
-has.
+To model lead-lag relationships and address the second and third challenges, we present a
+binary Markov Random Fields (MRFs) with weighted lower linear envelope as higher order (when the clique contains more than two
+nodes) energy function~\cite{Kohli:CVPR07,Nowozin:2011,Gould:ICML2011,gouldlearning}.
+In our implementation, we treat each stock as a node in MRFs and each stocks group which has lead-lag relationships as a maximum clique in MRFs. We use pre-defined industry classification
+list~\cite{ths} as the prior domain knowledge of each stock\textquotesingle s belonging maximum clique. Finally, the
+complexity of modeling dynamics between leading and lagging stocks becomes encouraging consistent over large cliques under
+weighted lower linear envelope potentials. Logits from hierarchical RNN networks are used as unary feature in MRFs. By minimizing the energy function which contains both unary and higher order
+features, we are able to predict each stock\textquotesingle s future price movement by jointly considering individual market
+price trending together with lead-lag relationships.
 
-\textbf{DJ comment1: whether high-order relationships between different stocks equals to led-lag relationship modeling. (delayed reaction/effect/correlation between different stocks)}
 
 We verify our methodology on Chinese stock market because
 it is generally considered less mature than other developed
@@ -183,18 +164,23 @@ mandatory to leverage from lead-lag relationship. To our best
 knowledge, our model is the first one demonstrating lead-lag
 relationship at minute-level frequency on Chinese stock market.
 
-Our main contributions are the following: (1) We propose a
+To summarize, the main contributions of this paper include: 
+\begin{itemize}
+\item  We propose a
 hierarchical multi-task architecture for learning stock price
-patterns without any hand-crafted features. (2) We propose the
+patterns without any hand-crafted features.
+\item We propose the
 first model that encode lead-lag relationship among stocks using
-higher order MRFs to the best of our knowledge. (3) We design an
+higher order MRFs to the best of our knowledge. \item We design an
 algorithm to learn weighted lower linear envelope with latent
 variables as higher order energy function under latent structural
 SVMs framework. Adding latent variable into higher order function
 enables our model to learn much richer representation than
 previous study~\cite{gouldlearning}.
+\end{itemize}
 
-\section{Related Works and Background}
+
+\section{Related Works}
 \label{sec:background}
 
 \textbf{Lead-lag Relationship} Lead-lag relationship has been
@@ -291,86 +277,26 @@ order MRFs and neural networks using latent structural SVMs
 \cite{yu2009learning} algorithm.
 
 
-\subsection{Higher Order Markov Random Fields}
-\label{sec:MRF}
-\emph{Markov Random Fields} are also known as \emph{undirected
-  graphical model} that can be seen as a regularized joint
-log-probability distribution of arbitrary non-negative functions
-over a set of maximal cliques of the
-graph~\cite{bishop:2006:PRML}. Let $C_j$ denotes a maximal clique
-in one graph and $\by_C$ denotes the set of variables in that
-clique, where $\by_c=\{y_i:i\in C_j\}$ are discrete random
-variables and $C_j\subseteq \{1,...,n\}$ is a subset of variable
-indices. Then the joint distribution can be written as:
-\begin{align}
-  \label{eq:energyfunction_init}
-  p(\by)=\frac{1}{Z}exp(-\sum_{C}{E_C(\by_C)})
-\end{align}
-\noindent where $E_C$ is called \emph{energy function} which can
-be arbitrary function. Therefore, to infer labels which best
-explains input data set, we can solve the \emph{energy
-  minimization} problem, which is also known as \emph{inference}:
-\begin{align}
-  \label{eq:inference_init}
-  \by^*=\argmax_{\by}p(\by)=\argmin_{\by}(-\sum_{C}{E_C(\by_C)})
-\end{align}
-To optimize the performance we can also consider a weighted
-version of energy functions. In order to do this we can decompose
-energy functions over nodes $\N$, edges $\E$ and higher order
-cliques $\cal C$~\cite{Szummer:ECCV08} then add weights on them
-accordingly. Let $\bw$ be the vector of parameters and $\phi$ be
-arbitrary feature function, then the energy can be decomposed as
-a set of linear combinations of weights and feature vectors:
-
-\begin{align}
-  \label{eq:energyfunction_UPH}
-  E(\by;\bw)&=\sum_{i\in \N}{\bw_i^U\phi^U(\by_i)}+ \notag\\
-  & \sum_{(i,j)\in \E}{\bw_{ij}^P\phi^P(\by_i,\by_j)}+
-  \sum_{\by_C\in \cal C}{\bw_C^H\phi^H(\by_C)}
-\end{align}
-
-\noindent where $U$ denotes \emph{unary} terms, $P$ denotes
-\emph{pairwise} terms and $H$ denotes \emph{higher order} terms
-(when $|C|>2$ namely each clique contains more than two
-variables).
-
-A weight vector $\bw$ is more preferable if it gives the
-ground-truth assignments $\by_t$ less than or equal to energy
-value than any other assignments $y$:
-
-\begin{align}
-E(y_t,w)\leq E(y,w)~ \text{,~}\forall y \neq y_t
-\text{,~} y\in \Y
-\end{align}
-
-
-Thus the goal of \emph{learning} MRFs is to learn the parameter
-vector $\bw^*$ which returns the lowest energy value for the
-ground-truth labels $y_t$ relative to any other assignments
-$y$~\cite{Szummer:ECCV08}:
-
-\begin{align}
-  \label{eq:learn_init}
-\bw^* = argmax_{\bw}(E(y_t,w)-E(y,w))~ \text{,~}\forall y \neq y_t
-\text{,~} y\in \Y
-\end{align}
-
-Up to now we have outlined the framework of using MRFs: defining
-\emph{energy functions}(eq~(\ref{eq:energyfunction_init})),
-solving \emph{inference} problem (MAP or energy minimization)
-(eq~(\ref{eq:inference_init})) and \emph{learning} parameters
-(eq~(\ref{eq:learn_init})). As for energy functions, our work
-focus on a class of higher-order potentials defined as a concave
-piecewise linear function which is known as lower linear envelope
-potentials over a clique of binary variables. It has been raising
-much interest due to its capability of encoding consistency
-constraints over large subsets of pixels in an
-image~\cite{Kohli:CVPR07,Nowozin:2011}. We follow
+\textbf{Higher Order Markov Random Fields} \emph{Markov Random
+  Fields} are also known as \emph{undirected graphical model}
+that can be seen as a regularized joint log-probability
+distribution of arbitrary non-negative functions over a set of
+maximal cliques of the graph~\cite{bishop:2006:PRML}. Utilizing
+MRFs mainly involves three steps: defining \emph{energy
+  functions}, solving \emph{inference} problem (MAP or energy
+minimization) and \emph{learning} parameters. As for \emph{energy
+  functions}, our work focus on a class of higher-order
+potentials defined as a concave piecewise linear function which
+is known as \emph{lower linear envelope} potentials over a clique
+of binary variables. It has been raising much interest due to its
+capability of encoding consistency constraints over large subsets
+of pixels in an image~\cite{Kohli:CVPR07,Nowozin:2011}. We follow
 \citename{gouldlearning} to construct a graph-cut algorithm to
 solve exact inference problem and propose our novel learning
 algorithms under latent structural SVM in
 section~\ref{sec:learning}.
 
+As the second step, in order to solve \emph{inference} problem,
 \citename{kohli2009robust} proposed a method to represent a class
 of higher order potentials with lower (upper) linear envelope
 potentials. By introducing auxiliary
@@ -384,157 +310,81 @@ terms which can be solved with an efficient algorithm. They
 showed the energy function with auxiliary variables is submodular
 by transforming it into a quadratic pseudo-Boolean
 form~\cite{Boros:MATH02} and how
-\emph{graph-cuts}~\cite{Hammer:1965, Boykov:ICCV01, Freedman:CVPR05} like
-algorithm can be applied to do exact \emph{inference}.
+\emph{graph-cuts}~\cite{Hammer:1965, Boykov:ICCV01,
+  Freedman:CVPR05} like algorithm can be applied to do exact
+\emph{inference}.
 
-\citename{gouldlearning} solved \emph{learning} problem of lower
-linear envelope under the max margin
-framework~\cite{tsochantaridis2005large}. In their work they
-pointed out the potential relationship between their auxiliary
-representation and latent SVM~\cite{yu2009learning}. Our work is
-closely based on their research. We continue to use the higher
-order energy function and inference algorithm developed in their
-previous work~\cite{Gould:ICML2011} and extend their max margin
-learning algorithm to include latent variables. The learning
-algorithm we use is an extension of max margin framework which is
-known as ``latent structural SVM''~\cite{yu2009learning}.
+As the third step, \citename{gouldlearning} solved
+\emph{learning} problem of lower linear envelope under the max
+margin framework~\cite{tsochantaridis2005large}. In their work
+they pointed out the potential relationship between their
+auxiliary representation and latent SVM~\cite{yu2009learning}.
+Our work is closely based on their research. We continue to use
+the higher order energy function and inference algorithm
+developed in their previous work~\cite{Gould:ICML2011} and extend
+their max margin learning algorithm to include latent variables.
+The learning algorithm we use is an extension of max margin
+framework which is known as ``latent structural
+SVM''~\cite{yu2009learning}.
 
-\subsection{Latent Structural SVMs}
-\label{sec:latent-struct-svms}
-
-The max-margin
+\textbf{Latent Structural SVMs} The max-margin
 framework~\cite{Taskar:ICML05,tsochantaridis2005large} is a
-principled approach to learn the weights of pairwise MRFs.
+principled approach to learn weights of pairwise MRFs.
 \citename{Szummer:ECCV08} adapted this framework to optimize
-parameters of pairwise MRFs inferred by graph-cuts method. In our
-previous work \citename{gouldlearning} extended this framework
-with additional linear constraints which enforces concavity on
-weights thus can be used for learning lower linear envelope
-potentials.
+parameters of pairwise MRFs inferred by graph-cuts method. In
+order to adapt higher-order energy function to max margin
+framework, \citename{Gould:ICML2011} approximated the energy
+function using equally spaced break-points.
+\citename{gouldlearning} extended this framework with additional
+linear constraints which enforces concavity on weights thus can
+be used for learning lower linear envelope potentials. However,
+those methods can only learn higher-order functions
+approximately. In this paper we propose an algorithm to optimize
+the energy function exactly by introducing auxiliary variables
+back into the feature vector and solving the learning problem
+using the \emph{latent structural SVM framework}
+~\cite{yu2009learning}. To include unobserved information,
+\citename{yu2009learning} extended the joint feature function in
+structural SVM with latent variables and re-write the object
+function of SSVM into a difference of two convex functions.
+Problem of this formulation can be solved using the
+Concave-Convex Procedure (CCCP)\cite{yuille2002concave} which is
+a two stages algorithm and guaranteed to converge to a local
+minimum.
 
-In this section we introduce \emph{latent structural
-  SVM}~\cite{yu2009learning} which extends the max-margin
-framework by encoding latent information in feature vector. In
-section~\ref{sec:learning} we will show how this framework can be
-adapted to learn parameters for higher order energy function with
-latent variables.
-
-Given an a linear combination of features vector $\phi(\bx ,\by)
-\in \reals^m$ and weights $\btheta \in \reals^m$, and a set of
-$n$ training examples $\{\by_i\}_{i=1}^n$ max-margin framework
-can be used to solve optimized solution $\btheta^*$. To include
-unobserved information in the model, Yu\cite{yu2009learning}
-extended the joint feature function\cite{tsochantaridis2005large}
-$\phi(\mathbf{x},\mathbf{y}) $ with a latent variable
-$\mathbf{h}\in \mathcal{H}$ to
-$\phi(\mathbf{x},\mathbf{y},\mathbf{h}) $. So the inference
-problem becomes
-\begin{align}
-  \label{eq:latent_ssvm_linearcomb}
-  f_\theta(x) = \argmax_{(\mathbf{y} \times \mathbf{h}) \in \mathcal{Y}
-  \times \mathcal{H}} \theta\cdot\phi(\mathbf{x},\mathbf{y},\mathbf{h})
-\end{align}
-
-Accordingly, the loss function can be extended as
-
-$$
-\Delta((\mathbf{y}_i,\mathbf{h}^*_i(\theta)),(\mathbf{\hat{y}}_i(\theta),\mathbf{\hat{h}}_i(\theta)))
-$$
-
-\noindent where
-
-\begin{align}
-  \label{eq:latentssvm_full_inf}
- (\mathbf{\hat{y}}_i(\theta),\mathbf{\hat{h}}_i(\theta))=\argmax_{(\mathbf{y}
-  \times \mathbf{h}) \in \mathcal{Y} \times \mathcal{H}}
-\theta\cdot\phi(\mathbf{x}_i,\mathbf{y_i},\mathbf{h})
-\end{align}
-
-\begin{align}
-  \label{eq:latentssvm_latent_inf}
-  \mathbf{h}^*_i(\theta) = \argmax_{\mathbf{h} \in \mathcal{H}} \theta \cdot
-  \phi(\mathbf{x}_i,\mathbf{y}_i,\mathbf{h})
-\end{align}
-
-\citename{yu2009learning} argued that in real world applications
-hidden variables are usually intermediate results and are not
-required as an output\cite{yu2009learning}. Therefore, the loss
-function can only focus on the inferenced hidden variables
-$\mathbf{\hat{h}}_i(\theta)$. Thus the upper bound used in
-standard structural SVMs\cite{tsochantaridis2005large} can be
-extended to:
-
-\begin{align}
-  &\Delta((\mathbf{y}_i,\mathbf{h}^*_i(\theta)),(\mathbf{\hat{y}}_i(\theta),\mathbf{\hat{h}}_i(\theta)))\notag\\
-  \leq&
-    \bigg(\max_{(\mathbf{\hat{y}} \times \mathbf{\hat{h}}) \in
-    \mathcal{Y} \times \mathcal{H}}
-    [\theta\cdot\Psi(\mathbf{x}_i,\mathbf{\hat{y}},\mathbf{\hat{h}})
-  +\Delta(\mathbf{y}_i,\mathbf{\hat{y}},\mathbf{\hat{h}})]\bigg)\notag\\
-  &-\max_{\mathbf{h} \in \mathcal{H}} \theta \cdot
-    \Psi(\mathbf{x}_i,\mathbf{y}_i,\mathbf{h})
-\end{align}
-
-Hence the optimization problem for Structural SVMs with latent
-variables becomes
-
-\begin{align}
-\label{eq:latent_ssvm_object}
-  \min_\theta\bigg(&\frac{1}{2}\|\theta\|^2 \notag \\
-  & + C\sum_{i=1}^{n}\big(\max_{(\mathbf{\hat{y}} \times
-  \mathbf{\hat{h}}) \in \mathcal{Y} \times \mathcal{H}}
-  [\theta\cdot\Psi(\mathbf{x}_i,\mathbf{\hat{y}},\mathbf{\hat{h}}) +
-  \Delta(\mathbf{y}_i,\mathbf{\hat{y}},\mathbf{\hat{h}})]\big)\bigg)\notag \\
-  & -C\sum_{i=1}^{n}\big(\max_{\mathbf{h} \in \mathcal{H}} \theta \cdot
-  \Psi(\mathbf{x}_i,\mathbf{y}_i,\mathbf{h})\big)
-\end{align}
-
-\noindent which is a difference of two convex functions. Problem
-of this formulation can be solved using the Concave-Convex
-Procedure (CCCP)\cite{yuille2002concave} which is guaranteed to
-converge to a local minimum. \citename{yu2009learning} proposed a
-two stages algorithm. In the first step the latent variable
-$\bh_i^*$ which best explains training pair $(\bx_i, \by_i)$ is
-found by solving equation~\eqref{eq:latentssvm_latent_inf}. This
-step is also called the ``latent variable completion'' problem.
-In the second step $\bh_i^*$ is used as completely observed to
-substitute $\bh$ in equation~\eqref{eq:latent_ssvm_object}.
-Therefore, solving equation~\eqref{eq:latent_ssvm_object} is
-equivalent to solve the standard structural SVM problem.
+% At the first step latent variables which best explains training
+% pair is found by solving ``latent variable completion''
+% problem. At the second step inferred latent variables are used
+% as completely observed. Therefore, solving object function with
+% latent variables reduces to solve the standard structural SVM
+% problem.
 
 The Latent Structural SVM can not take inputs data directly such
-as the SVM. To use Latent Structural SVM to optimize higher order
-MRFs with latent variables, the MRF inference algorithm
-(eq~(\ref{eq:latentssvm_full_inf})), as well as the MRF feature
-function, loss function, and latent variable completion problem
-(eq~(\ref{eq:latentssvm_latent_inf})) need to be implemented
-first. In order to adapt the energy function to max margin
-framework, \citename{Gould:ICML2011} approximated the energy
-function using equally spaced break-points thus removed those
-auxiliary variables. In this thesis we propose an algorithm to
-optimize the energy function exactly by introducing auxiliary
-variables back into the feature vector and solving the learning
-problem using the latent structural SVM framework. We will
-present this in detail in section~\ref{sec:learning}.
+as structural SVM. In order to use it, inference algorithm, as
+well as the MRF feature function, loss function, and latent
+variable completion problem\cite{yu2009learning} need to be
+implemented first. Our implementation is described in
+section~\ref{sec:opt}.
 
 \section{Methods}
 \label{sec:meth}
 
-In this section, we introduce multi-tasks DNNs-MRFs
-architecture from lower part to the top part. The whole model is
-constructed with two parts. The first part is a ``Holistic Market
-Price Learner'', which contains three DARNN modules. The goal of
-the first part is to extract informational representations of raw
+In this section, we introduce multi-task DNNs-MRFs architecture
+from lower part to the top part. The whole model is constructed
+with two parts. The first part is a ``Holistic Market Price
+Learner'', which contains three DARNN modules. The goal of the
+first part is to extract informational representations of raw
 market price end-to-end without any input of hand-crafted
 features and technical indicators from stock market. The second
 part is called ``Section Rotation Predictor'' which is a binary
 Markov Random Fields model contains higher order energy
 functions. Those higher order functions are applied to financial
 experts defined sector lists (used as maximum cliques). The goal
-of this part is to utilizing unary features learned by DNNs together with
-domain knowledge from financial experts by modeling
-higher order consistency among stocks which belong to the same sector. We
-summarized the whole architecture in figure~\ref{fig:mrfrnn}.
+of this part is to utilizing unary features learned by DNNs
+together with domain knowledge from financial experts by modeling
+higher order consistency among stocks which belong to the same
+sector. We summarized the whole architecture in
+figure~\ref{fig:mrfrnn}.
 
 
 \subsection{Holistic Market Price Learner}
@@ -556,10 +406,12 @@ price movement of stocks. Logits of the last layer are passed to
 Sector Rotation Predictor described in section~\ref{sec:srp} as
 unary features.
 
-\begin{figure}[ht]
+\begin{figure}[t]
   \centering
-  \includegraphics[width=1\columnwidth]{Methodology/figures/mrfrnn}
-  \caption{\label{fig:mrfrnn} Multi-tasks DNN MRFs Architecture}
+  \includegraphics[width=1\columnwidth]{Methodology/figures/hmplmrf.png}
+  \caption{\label{fig:mrfrnn} Multi-tasks DNN MRFs Architecture. Note 
+  that outputs of $\text{DARNN}_{\text{multi}}$ only corresponds to one 
+  node's unary feature in MRFs.}
 \end{figure}
 
 All three DARNN modules share the same raw market price data.
@@ -579,11 +431,12 @@ to predict target series $y_{t+p}$ in the next $p$ time steps:
 
 $$\hat{y}_{t+p} = \text{DARNN}(y_1,\dots,y_{t},x_1,\dots,x_t)$$
 
-The target series $\by_{\text{trending}}$ of Trending DARNN is
-closing price. The target series $\by_{\text{volatility}}$ of
-Volatility DARNN is the standard deviation of closing price over
-$M$ time-steps. We use Mean Squared Error (MSE) as loss function
-to train those two modules separately.
+The target series $\by_{\text{trend}}$ of
+$\text{DARNN}_{\text{trend}}$ is closing price. The target series
+$\by_{\text{volat}}$ of $\text{DARNN}_{\text{volat}}$ is the
+standard deviation of closing price over $M$ time-steps. We use
+Mean Squared Error (MSE) as loss function to train those two
+modules separately.
 
 To train the top level module, which is a classification DARNN,
 we concatenate context vectors $\bc_t$ from each of bottom level
@@ -592,9 +445,9 @@ input matrix. The target series $\by^{\text{binary}}$ is
 constructed by the sign function $y_t^{\text{binary}} =
 sign(y_{t+p}-y_t)$ where $y_t$ denotes closing price at time-step
 $t$. We use cross-entropy as loss function to train the final
-DARNN. Logits (the output of the DARNN before going through the
-softmax) of the final DARNN are passed to ``Sector Rotation
-Predictor'' as unary features.
+$\text{DARNN}_{\text{multi}}$. Logits (outputs before going through
+\emph{softmax}) of $\text{DARNN}_{\text{multi}}$ are then passed to 
+``Sector Rotation Predictor'' as unary features.
 
 In order to train HMPL together with MRFs in an end-to-end manner,
 we follow the subgradient method proposed by \citename{witoonchart2017application}.
@@ -607,7 +460,7 @@ taking derivative of equation~(\ref{eq:energyfunction_UPH}):
 
 \begin{align}
   \label{eq:der_w}
-  \frac{\partial L}{\partial \bw^U} = \phi^U(y)-\phi^U(y^*)
+  \frac{\partial L}{\partial \bw^U} = \psi^U(y)-\psi^U(y^*)
 \end{align}
 
 \noindent where $y$ is the ground-truth label and $y^*$ is
@@ -615,7 +468,7 @@ inferenced label. And gradients of parameters can be calculated by
 
 \begin{align}
   \label{eq:der_phi}
-  \frac{\partial L}{\partial \phi^U} = \bw^U
+  \frac{\partial L}{\partial \psi^U} = \bw^U
 \end{align}
 
 Equations \eqref{eq:der_w} and \eqref{eq:der_phi} can be directly plugged
@@ -636,22 +489,33 @@ to back-prop gradients to neural networks.
 \subsubsection{Higer Order Energy: The Lower Linear Envelope Function}
 \label{sec:llep}
 
-From section~\ref{sec:MRF} we have introduced that an
-\emph{energy function} may contain \emph{unary}, \emph{pairwise}
-and \emph{higher-order} potentials (see
-equation~\eqref{eq:energyfunction_UPH}). In this section we
-mainly focus on one class of higher-order potentials $\phi^H$
-defined as a concave piecewise linear function which is known as
-\emph{lower linear envelope potentials}. This has been studied
-extensively in Markov Random Fields area for encouraging
-consistency over large
+Energy functions can be decomposed over nodes $\N$, edges $\E$
+and higher order cliques $\cal C$~\cite{Szummer:ECCV08}. Let
+$\bw$ be vector of parameters and $\psi$ be arbitrary feature
+function, then the energy can be decomposed as a set of linear
+combinations of weights and feature vectors:
+
+\begin{align}
+  \label{eq:energyfunction_UPH}
+  E(\by;\bw)&=\sum_{i\in \N}{\bw_i^U\psi^U(\by_i)}+ \notag\\
+  & \sum_{(i,j)\in \E}{\bw_{ij}^P\psi^P(\by_i,\by_j)}+
+  \sum_{\by_C\in \cal C}{\bw_C^H\psi^H(\by_C)}
+\end{align}
+
+\noindent where $U$ denotes \emph{unary} terms, $P$ denotes
+\emph{pairwise} terms and $H$ denotes \emph{higher order} terms.
+In this section we mainly focus on one class of higher-order
+potentials $\psi^H$ defined as a concave piecewise linear
+function which is known as \emph{lower linear envelope
+  potentials}. This has been studied extensively in Markov Random
+Fields area for encouraging consistency over large
 cliques~\cite{Kohli:CVPR07,Nowozin:2011,Gould:ICML2011}.
 
-Let $\cal C$ denotes the set of all maximal cliques in an image and
-$\by_c=\{y_i |\text{\,for\,} i \in C_j\}$ denotes set of random
-variables in the clique $C_j$, a weighted lower linear envelope
-potential~\cite{gouldlearning} over $\by_c$ is defined as the
-minimum over a set of $K$ linear functions as:
+Let $\cal C$ denotes the set of all maximal cliques in an image
+and $\by_c=\{y_i |\text{\,for\,} i \in C_j\}$ denotes set of
+binary random variables where $y_i\in \{0,1\}$ in clique $C_j$, a
+weighted lower linear envelope potential over $\by_c$ is defined
+as the minimum over a set of $K$ linear functions as:
 %
 \begin{align}
   \psi^H_c\!(\by_c) \, &= \min_{k=1, \ldots, K} \left\{ a_k W_{\!c}(\by_c) + b_k \right\}.
@@ -713,9 +577,10 @@ satisfied:
 \end{align}
 %
 Another important property of equation~\eqref{eq:min_energy} is
-shift invariant~\cite{gouldlearning} (vertically). We write
-$\widetilde{\psi}^{H}_c\!(\by_c)$ by shift equation~\eqref{eqn:potential2} vertically
-with an abitrary amount $b^{const}\in R$
+shift invariant (vertically). We write
+$\widetilde{\psi}^{H}_c\!(\by_c)$ by shift
+equation~\eqref{eqn:potential2} vertically with an abitrary
+amount $b^{const}\in R$
 $$\widetilde{\psi}^{H}_c\!(\by_c) = \min_{k=1, \ldots, K}
 \left\{a_k W_{\!c}(\by_c) + b_k + b^\textrm{const} \right\}$$
 %
@@ -779,8 +644,7 @@ structural SVM.
                                                                          \includegraphics[width=0.4\columnwidth]{Methodology/figures/up.png}\\
                                                                          {\small (a)} & {\small (b)} 
   \end{tabular}
-  \caption{\label{fig:stmincut} $st$-graph
-    construction~\cite{gouldlearning} for
+  \caption{\label{fig:stmincut} $st$-graph construction for
     equation~\eqref{eqn:posiform}, unary and pairwise terms.
     Every cut corresponds to an assignment to the random
     variables, where variables associated with nodes in the
@@ -812,28 +676,27 @@ $a_1$ is assumed to be greater than $0$ so that all coefficients
 are positive (recall we assume $b_1=0$ in section~\ref{sec:llep}
 and we have $a_k > a_{k+1}$ and $b_k < b_{k+1}$). Since the energy function~\eqref{eqn:posiform}
 is submodular, the \emph{st-min-cut} graph can be constructed 
-based on equation~\eqref{eqn:posiform}.
+based on equation~\eqref{eqn:posiform}. The construction (including 
+unary and pairwise) is explained in \figref{fig:stmincut}. 
 
-The construction is explained in \figref{fig:stmincut}. Figure
-(a) denotes construction for equation~\eqref{eqn:posiform}. For
-each lower linear envelope potential edges are added as follows:
-for each $i \in c$, add an edge from $y_i$ to $t$ with weight
-$a_1 w^c_i$; for each $i \in c$ and $k = 1, \ldots, K-1$, add an
-edge from $z_k$ to $y_i$ with weight $(a_{k} - a_{k+1}) w^c_i$;
-and for $k = 1, \ldots, K-1$, add an edge from $s$ to $z_k$ with
-weight $a_k - a_{k+1}$ and edge from $z_k$ to $t$ with weight
-$b_{k+1} - b_k$. Figure (b) denotes construction for unary and
-pairwise terms (see \cite{Kolmogorov:PAMI04}). For unary edges (4
-edges on both sides), weights on each edge are corresponding to
-values in input unary terms accordingly. For pairwise edges (2
-edges in the middle), both edges share the same weight which
-equals to the input pairwise term.
-% todo: unary from RNN
+% Figure
+% (a) denotes construction for equation~\eqref{eqn:posiform}. For
+% each lower linear envelope potential edges are added as follows:
+% for each $i \in c$, add an edge from $y_i$ to $t$ with weight
+% $a_1 w^c_i$; for each $i \in c$ and $k = 1, \ldots, K-1$, add an
+% edge from $z_k$ to $y_i$ with weight $(a_{k} - a_{k+1}) w^c_i$;
+% and for $k = 1, \ldots, K-1$, add an edge from $s$ to $z_k$ with
+% weight $a_k - a_{k+1}$ and edge from $z_k$ to $t$ with weight
+% $b_{k+1} - b_k$. Figure (b) denotes construction for unary and
+% pairwise terms (see \cite{Kolmogorov:PAMI04}). For unary edges (4
+% edges on both sides), weights on each edge are corresponding to
+% values in input unary terms accordingly. For pairwise edges (2
+% edges in the middle), both edges share the same weight which
+% equals to the input pairwise term.
+
 
 \section{Optimization}
 \label{sec:opt}
-
-% todo: experiment no pairwise features
 
 \subsection{Transforming Between Representations}
 \label{sec:learning}
@@ -845,18 +708,17 @@ linear combination of parameter vector and feature vector. Then a
 two-step algorithm was developed to solve the latent structural
 SVM.
 
-The latent structural SVM formulation (see
-equation~\eqref{eq:latent_ssvm_linearcomb}) requires that the
-energy function be expressed as a linear combination of features
-and weights while our higher-order potential is represented as
-the minimum over a set of linear functions. However,
+The latent structural SVM formulation requires that the energy
+function be formulated into a linear combination of features and
+weights while our higher-order potential is represented as the
+minimum over a set of linear functions. However,
 in~\ref{sec:exact_inference} we reformulated the piesewise linear
 functions into a quadratic pseudo-Boolean
 function~\eqref{eqn:binary_concave_z} by introducing auxiliary
 variables. Now we show function~\eqref{eqn:binary_concave_z}
 itself is an inner product of parameter vector and feature vector
-with latent information. We first noticed that the function can
-be expanded as a summation of $2K-1$ terms:
+with latent information. Note that the function can be expanded
+as a summation of $2K-1$ terms:
 
 \begin{align}
   \label{eq:originalenergy}
@@ -871,7 +733,7 @@ let $b_1=0$. Now we can reparameterize the energy function
 as
 \begin{align}
   \label{eq:llsvm_innerprod_energy}
-  E^c(\by_c,\bz; \btheta) = \btheta^T \! \phi(\by_c,\bz)
+  E^c(\by_c,\bz; \btheta) = \btheta^T \! \psi(\by_c,\bz)
 \end{align}
 
 \noindent where:
@@ -889,7 +751,7 @@ as
 
 \begin{equation}
 \label{eq:llsvm_feature}
-  \phi_k = \left\{
+  \psi_k = \left\{
 		\begin{aligned}
       & W_c(\by_c) 	& \text{for} \ k=1\\
       & W_c(\by_c)\bz_k & \text{for}\ 1<k\le K\\
@@ -898,22 +760,20 @@ as
   \right.
 \end{equation}
 
-Under this formulation, inference
-problems~\eqref{eq:latentssvm_full_inf}
-and~\eqref{eq:latentssvm_latent_inf} introduced in
-section~\ref{sec:latent-struct-svms} can be written as:
+Under this formulation, inference problems in
+\cite{yu2009learning} can be written as:
 
 \begin{align}
   \label{eq:linenv_full_inf}
   (\mathbf{\hat{y}}_k(\btheta),\mathbf{\hat{z}}_k(\theta))=\argmin_{(\mathbf{y}
   \times \mathbf{z}) \in \mathcal{Y} \times \mathcal{Z}}
-  \btheta^T\cdot\phi(\mathbf{y}_k,\mathbf{z}_k)
+  \btheta^T\cdot\psi(\mathbf{y}_k,\mathbf{z}_k)
 \end{align}
 and
 \begin{align}
   \label{eq:linenv_latent_inf}
   \mathbf{z}^*_k(\btheta) = \argmin_{\mathbf{z} \in \mathcal{Z}}
-  \btheta^T \cdot \phi(\mathbf{y}_k,\mathbf{z}_k)
+  \btheta^T \cdot \psi(\mathbf{y}_k,\mathbf{z}_k)
 \end{align}
 
 There are 2 facts worth to mention. The first fact is
@@ -940,23 +800,7 @@ Therefore, assignments inferred by graph-cut algorithm can be
 directly encoded into a linear combination by using our latent
 structural SVM formulation for learning purpose. The remaining
 task is to ensure the concavity of $\btheta$. We do this by
-adding the following constraint:
-
-\begin{align}
-  A\btheta\geq0 \text{,\;~~~} A=
-                  \begin{bmatrix}
-                    1 & \mathbf{0} & \mathbf{0}\\
-                    \mathbf{0} & -\mathbf{1} & \mathbf{0}\\
-                    \mathbf{0} & \mathbf{0} & \mathbf{P}
-                  \end{bmatrix}\in \mathbb{R}^{(2K-1)\times(2K-1)}
-\end{align}
-
-\noindent where $-\mathbf{1}$ is a matrix of size $(K-1)\times(K-1)$ and
-$\mathbf{P}$ is an identity matrix of size $(K-1)\times(K-1)$.
-
-One subtle problem we found during experiments is that the
-algorithm can be stuck with small numerical value. To avoid this
-we add small slack variables $\epsilon$ on those constraints:
+adding following constraint:
 
 \begin{align}
   \label{eq:concave_constraint}
@@ -968,93 +812,15 @@ we add small slack variables $\epsilon$ on those constraints:
                   \end{bmatrix}\in \mathbb{R}^{(2K-1)\times(2K-1)}
 \end{align}
 
-\noindent where $\epsilon$ equals to $\mathbf{1}^{-15}$ in our
-experiments.
+\noindent where $-\mathbf{1}$ is a matrix of size $(K-1)\times(K-1)$ and
+$\mathbf{P}$ is an identity matrix of size $(K-1)\times(K-1)$.
+One subtle problem we found during experiments is that the
+algorithm can be stuck with small numerical value. To avoid this
+we add small slack variables $\epsilon=\mathbf{1}^{-15}$ on 
+those constraints.
 
 \subsection{Latent Structural SVM Learning}
 \label{sec:mrflssvm_learning_algo}
-
-With the inner product formulation
-(equation~\eqref{eq:llsvm_innerprod_energy}) of higher order
-energy function in hand, we now able to develop our latent
-structural SVM learning algorithm. The energy function (higher
-order function together with unary and pairwise functions) can be
-written as:
-\begin{equation}
-  E_{all}(y,z) = \begin{bmatrix}
-    \btheta^H\\
-    \theta^{unary}\\
-    \theta^{pairwise}
-  \end{bmatrix}^T 
-  \cdot \begin{bmatrix}
-    \phi^H\\
-    \phi^{unary}\\
-    \phi^{pairwise}
-  \end{bmatrix}=\theta_{all}^T\cdot\phi_{all}
-\end{equation}
-where $\btheta^H\in \reals$ is the parameter vector in higher
-order equation~\eqref{eq:llsvm_innerprod_energy} of size $2K-1$.
-$\theta^{unary}$ and $\theta^{pairwise}$ are both scalars.
-$\phi^\textrm{unary} = \sum_i \psi^U_i\!(y_i)$ and
-$\phi^\textrm{pairwise} = \sum_{ij} \psi^P_{ij}(y_i, y_j)$.
-Therefore, the size of $\theta_{all}$ is $2K+1$.
-
-Plug equation~\eqref{eq:linenv_full_inf} and
-equation~\eqref{eq:linenv_latent_inf} into object
-function~\eqref{eq:latent_ssvm_object}, the latent structural SVM
-object function for our problem can be derived as a difference of
-two convex functions:
-
-\begin{align}
-\label{eq:lssvm_object}
-  \min_\theta\bigg(\frac{1}{2}\|\theta\|^2+
-  C\sum_{i=1}^{n}\big(\max_{(\mathbf{\hat{y}} \times
-  \mathbf{\hat{z}}) \in \mathcal{Y} \times \mathcal{Z}}
-  [\theta\cdot\phi(\mathbf{\hat{y}},\mathbf{\hat{z}}) +
-  \Delta(\mathbf{y}_i,\mathbf{\hat{y}},\mathbf{\hat{z}})]\big)\bigg)\\
-  -C\sum_{i=1}^{n}\big(\max_{\mathbf{z} \in \mathcal{Z}} \theta \cdot
-  \phi(\mathbf{y}_i,\mathbf{z})\big)\nonumber
-\end{align}
-
-As mentioned by \citename{yu2009learning} the Concave-Convex
-Procedure (CCCP)~\cite{yuille2002concave} can be used to solve the
-optimization problem. Our algorithm contains two stages. We first
-imputes the latent variables $\bz$ explicitly by
-equation~\eqref{eq:linenv_latent_inf}. Namely solving the
-``latent variable completion'' problem~\cite{yu2009learning}:
-
-\begin{align}
-  \bz_i^*=\argmax_{\mathbf{z} \in \mathcal{Z}} \theta \cdot
-  \phi(\mathbf{y}_i,\mathbf{z})
-\end{align}
-
-The inference result $z_i^*$ for $i=1,\dots,n$ is used as
-completely observed for later stage. With the latent variable
-$z_i^*$ which best explains the ground-truth data $y_i$ in hand,
-updating the parameter vector $\btheta$ is similar to solve the
-standard max-margin optimization problem:
-
-\begin{align}
-\label{eq:mrflssvm_object}
-  \min_\theta\bigg(\frac{1}{2}\|\theta\|^2+
-  C\sum_{i=1}^{n}\big(\max_{(\mathbf{\hat{y}} \times
-  \mathbf{\hat{z}}) \in \mathcal{Y} \times \mathcal{Z}}
-  [\theta\cdot\phi(\mathbf{\hat{y}},\mathbf{\hat{z}}) +
-  \Delta(\mathbf{y}_i,\mathbf{\hat{y}},\mathbf{\hat{z}})]\big)\bigg)\\
-  -C\sum_{i=1}^{n}\big(\theta \cdot
-  \phi(\mathbf{y}_i,\mathbf{z}_i^*)\big) \nonumber
-\end{align}
-
-Our optimization algorithm is summarized in \algref{alg:learning}. As we mentioned
-in section \ref{sec:mrf_train}, although we proposed an end-to-end subgradient algorithm
-is section \ref{sec:hmpl}, MRFs updated by such algorithm take too many iterations
-to converge. Therefore, we propose a two-stage training procedure. At first stage, HMPL and
-MRFs are trained separately. Therefore, MRFs can take advantage of the efficient latent
-structural SVM and converge in a polynomial number of iterations. After all those models
-are converged, we then combine them together to conduct end-to-end training. Notice that the
-CCCP Inner Loop in \algref{alg:learning} is actually solving conventional structural SVM problem.
-Therefore, at the second stage, we use subgradient algorithm \cite{witoonchart2017application} 
-to replace the CCCP Inner Loop. Other settings remain the same.
 
 \begin{algorithm}
   \begin{algorithmic}[1]
@@ -1066,7 +832,7 @@ to replace the CCCP Inner Loop. Other settings remain the same.
     \STATE{Set $iter = 0$}
     \FOR{each training example, $i = 1, \ldots, n$}
     \STATE{compute $ \bz_i^*=\argmax_{\mathbf{z} \in \mathcal{Z}}
-      \theta \cdot \phi(\mathbf{y}_i,\mathbf{z}) $}
+      \theta \cdot \psi(\mathbf{y}_i,\mathbf{z}) $}
     \ENDFOR
 
     \STATE{ {\bf initialize} active constraints set ${\cal C}_i = \{ \}$ for all $i$}
@@ -1098,47 +864,100 @@ to replace the CCCP Inner Loop. Other settings remain the same.
     MRFs with latent variables.}
 \end{algorithm}
 
+With the inner product formulation
+(equation~\eqref{eq:llsvm_innerprod_energy}) of higher order
+energy function in hand, we now able to develop our latent
+structural SVM learning algorithm. The energy function (higher
+order function together with unary and pairwise functions) can be
+written as:
+\begin{equation}
+  E_{all}(y,z) = \begin{bmatrix}
+    \btheta^H\\
+    \theta^{unary}\\
+    \theta^{pairwise}
+  \end{bmatrix}^T 
+  \cdot \begin{bmatrix}
+    \psi^H\\
+    \psi^{unary}\\
+    \psi^{pairwise}
+  \end{bmatrix}=\theta_{all}^T\cdot\psi_{all}
+\end{equation}
+where $\btheta^H\in \reals$ is the parameter vector in higher
+order equation~\eqref{eq:llsvm_innerprod_energy} of size $2K-1$.
+$\theta^{unary}$ and $\theta^{pairwise}$ are both scalars.
+$\psi^\textrm{unary} = \sum_i \psi^U_i\!(y_i)$ and
+$\psi^\textrm{pairwise} = \sum_{ij} \psi^P_{ij}(y_i, y_j)$.
+Therefore, the size of $\theta_{all}$ is $2K+1$.
+
+% Plug equation~\eqref{eq:linenv_full_inf} and
+% equation~\eqref{eq:linenv_latent_inf} into object function in
+% \cite{yu2009learning}, the latent structural SVM object function
+% for our problem can be derived as a difference of two convex
+% functions:
+
+% \begin{align}
+% \label{eq:lssvm_object}
+%   \min_\theta\bigg(\frac{1}{2}\|\theta\|^2+
+%   C\sum_{i=1}^{n}\big(\max_{(\mathbf{\hat{y}} \times
+%   \mathbf{\hat{z}}) \in \mathcal{Y} \times \mathcal{Z}}
+%   [\theta\cdot\psi(\mathbf{\hat{y}},\mathbf{\hat{z}}) +
+%   \Delta(\mathbf{y}_i,\mathbf{\hat{y}},\mathbf{\hat{z}})]\big)\bigg)\\
+%   -C\sum_{i=1}^{n}\big(\max_{\mathbf{z} \in \mathcal{Z}} \theta \cdot
+%   \psi(\mathbf{y}_i,\mathbf{z})\big)\nonumber
+% \end{align}
+
+Following \citename{yu2009learning}, we use the two stages Concave-Convex
+Procedure (CCCP)~\cite{yuille2002concave} to solve the
+optimization problem. We first
+imputes the latent variables $\bz$ explicitly by
+equation~\eqref{eq:linenv_latent_inf}. Namely solving the
+``latent variable completion'' problem~\cite{yu2009learning}:
+
+\begin{align}
+  \bz_i^*=\argmax_{\mathbf{z} \in \mathcal{Z}} \theta \cdot
+  \psi(\mathbf{y}_i,\mathbf{z})
+\end{align}
+
+The inference result $z_i^*$ for $i=1,\dots,n$ is used as
+completely observed for later stage. With the latent variable
+$z_i^*$ which best explains the ground-truth data $y_i$ in hand,
+updating the parameter vector $\btheta$ reduces to solve the
+standard structural SVM problem:
+
+\begin{align}
+\label{eq:mrflssvm_object}
+  \min_\theta\bigg(\frac{1}{2}\|\theta\|^2+
+  C\sum_{i=1}^{n}\big(\max_{(\mathbf{\hat{y}} \times
+  \mathbf{\hat{z}}) \in \mathcal{Y} \times \mathcal{Z}}
+  [\theta\cdot\psi(\mathbf{\hat{y}},\mathbf{\hat{z}}) +
+  \Delta(\mathbf{y}_i,\mathbf{\hat{y}},\mathbf{\hat{z}})]\big)\bigg)\\
+  -C\sum_{i=1}^{n}\big(\theta \cdot
+  \psi(\mathbf{y}_i,\mathbf{z}_i^*)\big) \nonumber
+\end{align}
+
+Our optimization algorithm is summarized in
+\algref{alg:learning}. As we mentioned in supplementary materials, 
+although we proposed an end-to-end
+subgradient algorithm is section \ref{sec:hmpl}, MRFs updated by
+such algorithm take too many iterations to converge. Therefore,
+we propose a two-stage training procedure. At first stage, HMPL
+and MRFs are trained separately. Therefore, MRFs can take
+advantage of the efficient latent structural SVM and converge in
+a polynomial number of iterations. After all those models are
+converged, we then combine them together to conduct end-to-end
+training. Note that the CCCP Inner Loop in \algref{alg:learning}
+is actually solving standard structural SVM problem. Therefore,
+at the second stage, we use subgradient algorithm proposed in
+section~\ref{sec:hmpl} to replace the CCCP Inner Loop. Other
+settings remain the same.
+
 The last problem remaining is the initialization method. Because
 our objective function~\eqref{eq:mrflssvm_object} is not convex
 and the CCCP algorithm is only guaranteed to converge to a local
 minimum or saddle point\cite{yuille2002concave}, initialization
 of $\btheta$ might affect the performance of our algorithm. Since
-there are no theoretical solution for this problem, we only
-propose an empirical \algref{alg:init_theta}:
-
-\begin{algorithm}[ht]
-  \begin{algorithmic}[1]
-    \STATE{$gap=\frac{1}{K}$, $a_1=\cal U(0,1e6)$, $b_1=0$,
-      $sp_1=(0,0)$, $w_0=0$, $counter=2$} \FOR{each
-      clique $c\in \cal C$} \STATE{Compute weighted clique value
-      $w_c=W_c(y_C)$} \IF{$w_c-w_{c-1}>gap$}
-    \STATE{$upbound = a_{counter}w_c+b_{counter}$\\
-      $sp_{counter}=(w_c,\cal U(upbound-0.5,upbound))$\\
-      Calculate $a_{counter}$ and $b_{counter}$ using
-      $sp_{counter-1}$ and $sp_{counter}$\\
-      $counter=counter+1$}
-    \ENDIF
-    \ENDFOR
-    \STATE{If $counter<K$, remaining $a$s and $b$s are all set to
-      be $a_{counter}$ and $b_{counter}$} \STATE{Calculate
-      $\btheta$ using $\{a_k,b_k\}_{k=1}^K$}
-  \end{algorithmic}
-  \caption{\label{alg:init_theta} Empirical initialization
-    algorithm for $\btheta$}
-\end{algorithm}
-
-We assume that the more evenly distributed of $W_c(Y_c)$ where
-$c\in\cal C$ on $x$ axis, the more rich representation (number of
-linear functions) the energy function should have. In order to
-initialize $\btheta$, we first determine the x-coordinate of
-sampled points $sp$. Then we sample its y-coordinate from a
-uniform distribution $\cal U(\text{upbound},\text{upbound}-0.5)$ to add some
-randomness in our initialization as well as maintain concavity.
-Linear parameters $a_k$ and $b_k$ are later calculated using
-those sampled points $sp_k$ and $sp_{k-1}$. At last we encode
-$\{a_k,b_k\}_{k=1}^K$ into $\btheta$ using
-equation~\eqref{eq:llsvm_param}.
-
+there are no theoretical solution for this problem, we propose an
+empirical initialization algorithm in supplementary material.
 
 
 \section{Experiment}
@@ -1151,7 +970,7 @@ details. Finally, we select four evaluation metrics and use them
 to demonstrate our framework's effectiveness by comparing with
 other baseline models.
 
-\subsection{Dataset}
+\subsection{Dataset and Model Settings}
 \label{sec:dataset}
 
 To demonstrate the effectiveness of higher order consistency, we
@@ -1171,11 +990,11 @@ then collect their constituent stocks' minute-level data from
 day has 3 trading hours. So there are 240 samples for each
 normally traded stock each day. Each sample contains 6 features:
 opening price, high price, low price, closing price, volume,
-amount. During this period, there are some stocks de-listed from
-Chinese stock market (SZ000024, SH600485, SH600832 in CSI 200;
-SZ000693, SZ000748, SZ000982 in CSI 500; SH600485, SH600832,
-SZ000024, SH601299 in CSI 300). Therefore, in total we collect
-197, 497 and 296 stocks during this period respectively. For each
+amount. \footnote{During this period, there are some stocks
+  de-listed (SZ000024, SH600485, SH600832 in CSI 200; SZ000693,
+  SZ000748, SZ000982 in CSI 500; SH600485, SH600832, SZ000024,
+  SH601299 in CSI 300). Therefore, in total we collect 197, 497
+  and 296 stocks during this period respectively.} For each
 stock, the first $80\%$ days are used to construct the training
 set and the last $20\%$ days are used as testing set.
 Approximately training set and testing set contain 13 million and
@@ -1211,108 +1030,18 @@ models, we normalize each stock each feature by \emph{z-score}
 function using standard deviation and mean calculated in training
 set.
 
-\begin{table*}[t]
-\centering
-\caption{HMPL Multi-task Setting}
-\begin{tabular}{|c|c|c|c|} \hline
-  Task & Input Features & Target & Loss\\ \hline
-  Trend Regression& \makecell{All \textbf{Market} features\\excluding closing price }& Closing price & MSE\\ \hline
-  Volatility Regression& \makecell{All \textbf{Market} features\\excluding closing price }& \makecell{Standard deviation of closing price\\over past 10 time steps}& MSE\\ \hline
-  Classification& \makecell{Context vectors from \\ $\text{DARNN}_{\text{trend}}$ and $\text{DARNN}_{\text{volat}}$\\All \textbf{Market} features\\excluding closing price} & \makecell{\{Negative, No Changes, Positive\} \\labels of closing price }& Negative Log-likelihood\\ \hline
-\end{tabular}
-  \label{tab:multi}
-\end{table*}
-
-\subsection{Training Details}
-\label{sec:train_detail}
-
-\subsubsection{Multi-task training}
-\label{sec:multi_train}
-
-For brevity, we denote market price dataset described in
-section~\ref{sec:dataset} which only contains $5$ features as
+For brevity, we denote market price dataset which only contains 
+$5$ features as
 \textbf{Market} and the concatenated $13$ features dataset as
-\textbf{Indicator}. The multi-task setting is summarized in
-table~\ref{tab:multi}. As discussed in
-section~\ref{sec:background} and section~\ref{sec:hmpl}, the aim
-of HMPL is to replace hand-crafted features. So the entire
-framework is trained only on \textbf{Market} dataset. In order to
-learn diversified features, we choose two regression tasks,
-trending regression and volatility regression as lower level
-tasks. For trending task, closing price at time $t$ can be
-directly used as regression target. For volatility task, we use
-Standard Deviation of closing price as a measure of volatility
-during a fixed period $T_{\text{volatility}}$. In our
-implementation, after a grid search we choose
-$T_{\text{volatility}}=10$ as our window size. The dimensions of
-hidden state and cell state are 32 for both lower level tasks and
-128 for higher level task.
-
-To improve accuracy and reduce over-fitting, we add a drop out
-layer between input layer and LSTM layer with a ratio of $0.2$.
-We also clip and normalize gradients during back-propagation
-stage with a maximum norm of $5.0$ to prevent gradient exploding
-issue. As pointed out by \citename{lample2016neural}, the
-question of ``when should the training schedule switch from one
-task to another task?'' or ``should each task be weighted
-equally?'' remains open. In our implementation, we follow the
-proportional sampling approach described by
-\citename{sogaard2016deep}. After a backward pass completed, we
-randomly sample a new task as well as its batch data as the next
-task to be trained. In practice, we use a proportion of
-$[0.25,0.25,0.5]$ for three tasks respectively. This mechanism
-helps multi-task model to avoid \emph{Catastrophic Forgetting}
-phenomenon which means lower level model forgets learned
-knowledge during higher level model back-propagation pass.
-
-Even though we propose an end-to-end training algorithm for HMPL
-and MRFs in section~\ref{sec:hmpl}, MRFs inference stage is still
-too slow to be trained jointly with HMPL. To overcome this
-difficulty, we implement a two stages training procedure. We
-first add a \emph{softmax} layer on top of
-$\text{DARNN}_{\text{class}}$ and train HMPL separately from
-MRFs. We use \emph{Negative Log-likelihood} as the loss function.
-At the second stage, after HMPL converge, we remove the
-\emph{softmax} layer and re-train it together with MRFs. One
-issue we must mention is that, even though we use binary MRFs
-which can only predict positive / negative price movement, we
-find there is a significant amount of time when stock price
-remains no change. We find it benefits the performance a lot if
-we treat the classification as a three classes problem rather
-than a binary classification problem during the first stage.
-Therefore, at the first stage, the \emph{softmax} layer will
-output probability for three labels: \emph{negative movement},
-\emph{no changes} and \emph{positive movement}. Since binary MRFs
-still needs a two dimension input as part of unary energy
-function, after the \emph{softmax} layer is removed, we add an
-additional linear mapping layer between logits of HMPL and MRFs
-at the second stage.
-
-\subsubsection{End-to-end NN-MRFs training}
-\label{sec:mrf_train}
-
-With a converged HMPL at hand, now we can go forward to train
-MRFs. We only include pairwise energy function through
-section~\ref{sec:srp} and section~\ref{sec:opt} to show a general
-application of our proposed algorithm. In the case of Chinese
-stock market, to our best knowledge there is no public available
-definition of pairwise relationship between stocks. Therefore, in
-our implementation we only use unary and higher order energy
-function. Each stock is then treated as a node in MRFs and each
-stocks group which has lead-lag relationships is treated as a
-maximum clique in MRFs. One benefit of MRFs clique is that we can
-embed domain expert knowledge about industry classification as
-maximum cliques into our model. We choose to use Tonghuashun
-industry classification \cite{ths} in our model. One subtle but
-crucial detail about modeling lead-lag effect lies in
-equation~(\ref{eqn:potential2}). Recall that $W_{\!c}(\by_c) =
-\sum_{i \in c} w_i y_i$ with $w^c_i \geq 0$ and $\sum_{i \in c}
-w^c_i = 1$ which are weights for stocks in each clique.
-Therefore, leading stocks should have a higher weights while
-lagging stocks should have lower weights. In our implementation,
-we use constituents' weight defined in CSI200, CSI500 and CSI300
-as their weights in equation~(\ref{eqn:potential2}) and normalize
-them to ensure the summation equals $1$.
+\textbf{Indicator}. As discussed in section~\ref{sec:hmpl}, 
+closing price at time $t$ can be directly used as regression 
+target for $\text{DARNN}_{\text{trend}}$. 
+Standard Deviation of closing price with a window size of $10$ 
+is used as regression target for $\text{DARNN}_{\text{volat}}$.
+The dimensions of
+hidden state and cell state are 32 for both lower DARNNs and
+128 for $\text{DARNN}_{\text{multi}}$. More training details are
+described in section \ref{sec:sup}
 
 \subsection{Results}
 \label{sec:res}
@@ -1337,10 +1066,10 @@ predicted labels of constituent stocks in each CSI index.
 Data Set                   & Models                          & \multicolumn{12}{c}{Chinese Securities Index (CSI)}                                                                                                                                                                                                    \\ \midrule
 \multicolumn{2}{c}{\multirow{2}{*}{}}                        & \multicolumn{4}{c}{CSI200}                                                                & \multicolumn{4}{c}{CSI500}                                                             & \multicolumn{4}{c}{CSI300}                                        \\
 \multicolumn{2}{c}{}                                         & Accuracy                   & Precision      & Recall         & F1 Score                   & Accuracy       & Precision      & Recall         & F1 Score                            & Accuracy       & Precision      & Recall         & F1 Score       \\ \cmidrule(r){1-2} \cmidrule(lr){4-5} \cmidrule(lr){8-9} \cmidrule(lr){12-13}
-\multirow{3}{*}{Indicator} & LSTM                            & 62.30                      & 73.82          & 70.70          & 72.23                      & 60.35          & 68.56          & 70.03          & 69.29                               & 60.16          & 71.39          & 68.50          & 69.91          \\
+\multirow{3}{*}{\textbf{Indicator}} & LSTM                            & 62.30                      & 73.82          & 70.70          & 72.23                      & 60.35          & 68.56          & 70.03          & 69.29                               & 60.16          & 71.39          & 68.50          & 69.91          \\
                            & \multicolumn{1}{c|}{LSTM\_ATTN} & 64.26                      & 72.41          & \textbf{74.34} & \multicolumn{1}{c|}{73.36} & 61.13          & 75.63          & 66.67          & \multicolumn{1}{c|}{70.86}          & 64.26          & 75.54          & 70.57          & 72.97          \\
                            & DARNN                           & 63.09 & 72.08          & 73.55          & 72.81                      & 66.60          & 78.98          & \textbf{74.13}          & \textbf{76.48}                               & 65.82          & 76.68          & 73.46          & 75.04          \\ \cmidrule(r){1-2} \cmidrule(lr){4-5} \cmidrule(lr){8-9} \cmidrule(lr){12-13}
-\multirow{5}{*}{Market}    & LSTM                            & 57.62                      & 67.57          & 67.37          & 67.47                      & 55.86          & 68.10          & 64.53          & 66.27                               & 56.25          & 67.17          & 65.98          & 66.57          \\
+\multirow{5}{*}{\textbf{Market}}    & LSTM                            & 57.62                      & 67.57          & 67.37          & 67.47                      & 55.86          & 68.10          & 64.53          & 66.27                               & 56.25          & 67.17          & 65.98          & 66.57          \\
                            & \multicolumn{1}{c|}{LSTM\_ATTN} & 59.57                      & 71.60          & 66.86          & \multicolumn{1}{c|}{69.15} & 58.40          & 69.53          & 68.12          & \multicolumn{1}{c|}{68.81}          & 61.33          & 71.87          & 68.91          & 70.36          \\
                            & \multicolumn{1}{c|}{DARNN}      & 61.13                      & 71.26          & 71.47          & \multicolumn{1}{c|}{71.37} & 63.09          & 77.04          & 67.87          & \multicolumn{1}{c|}{72.16}          & 63.87          & 72.09          & 73.59          & 72.83          \\
                            & \multicolumn{1}{c|}{HMPL}       & 65.04                      & 74.04          & 73.39          & \multicolumn{1}{c|}{73.72} & 65.43          & 76.04          & 72.80 & \multicolumn{1}{c|}{74.38} & 66.60          & 71.67          & \textbf{78.90} & 75.11          \\
@@ -1379,7 +1108,7 @@ As we can observe that HMPL-MRFs framework is constantly better
 than the other baselines on all 3 CSI index constituent stocks.
 It shows evidence that higher-order energy function can help with
 encoding clique level consistency thus improving overall
-prediction performance. One interesting point to notice that the
+prediction performance. One interesting point to note is that the
 recall rate of HMPL-MRFs is constantly lower than other
 baselines. This can be seen as a tradeoff between accuracy and
 recall rate. However, it is worth to mention that for stock price
@@ -1425,33 +1154,12 @@ contains 35 constituent stocks from CSI300 index \footnote{These
   visualization. Conclusions from these two sectors also apply to
   other sectors}. We then measure consistency level between each
 two of these constituent stocks. In order to capture their
-temporal relationship, we design a novel consistency measure
-which is calculated on temporal intervals.
+temporal relationship, we propose a novel consistency measure
+which is calculated on temporal intervals in supplementary 
+materials.
 % Let $\C\in\{\text{Nonferrous Metal},\text{Infrastructure}\}$
 % denotes one clique. $\by_c=\{\by_i \in \C\}$ denotes a set of
 % time-series $\by_i^T=\{y_i^1,y_i^2,...,y_i^T\}$ for all stocks
-
-Let $\by_i^T=\{y_i^1,y_i^2,...,y_i^T\}$ denotes time-series for
-stock $i$. $y_i^t\in \{0,1\}$ is the binary price movement label
-at time $t$. We segment time-series $\by_i^T$ into
-$N=\lceil\frac{T}{P}\rceil$ non-overlapping intervals
-$\{y_i^n,y_i^{n+1},...,y_i^{n+P}\}$ with fixed length $P$. For
-any two stocks $i$ and $j$, we calculate the difference
-$d_{ij}^n=\sum_n^{n+P}{y_i^n}-\sum_n^{n+P}{y_j^n}$ of how many
-times positive price movement happen in the $n$th time interval
-in each stock. Then the consistency level $c_{ij}$ between stocks
-$i$ and $j$ can be calculated as a $\ell_1\text{norm}$:
-$c_{ij}=-\|\mathbf{d}_{ij}\|_1$ where
-$\mathbf{d}_{ij}=\{d_{ij}^1,d_{ij}^2,...,d_{ij}^N\}$. We
-normalize $c_{ij}$ into interval $[-1,1]$. Each entry in
-figure~\ref{fig:consistency} denotes a consistency level measure
-$c_{ij}$. The larger the $c_{ij}$ is, the higher of consistency
-level between stock $i$ and stock $j$, the color of corresponding
-entry is closer to red, and vice versa. As we mentioned in
-section~\ref{sec:intro}, the average duration of information
-arrival-conduction-integration-release process is 4.04 minutes.
-Since which stock is leading at each time interval is elusive, we
-set $P=9$ when calculating consistency measures.
 
 As we can see in figure (b), there is a significant red square
 area, which means ground-truth heat-map shows strong intra-clique
@@ -1508,9 +1216,148 @@ help further diminishing domain knowledge required by our
 framework.
 
 
-\setcitestyle{numbers} % set the citation style to ``numbers''.
-\bibliographystyle{plainnat}
+
+\bibliographystyle{ACM-Reference-Format}
+%\bibliographystyle{plainnat}
 \bibliography{Bibs/thesis,Bibs/long,Bibs/scene,Bibs/proposal,Bibs/fin}
+
+
+\appendix
+
+\subsection{Training Details}
+\label{sec:train_detail}
+
+\subsubsection{Initialization of lower linear envelope}
+\label{sec:sup_init}
+
+We assume that the more evenly distributed of $W_c(Y_c)$ where
+$c\in\cal C$ on $x$ axis, the more rich representation (number of
+linear functions) the energy function should have. In order to
+initialize $\btheta$, we first determine the x-coordinate of
+sampled points $sp$. Then we sample its y-coordinate from a
+uniform distribution ${\cal U}(\text{upbound},\text{upbound}-0.5)$ to add some
+randomness in our initialization as well as maintain concavity.
+Linear parameters $a_k$ and $b_k$ are later calculated using
+those sampled points $sp_k$ and $sp_{k-1}$. At last we encode
+$\{a_k,b_k\}_{k=1}^K$ into $\btheta$ using
+equation~\eqref{eq:llsvm_param}. This algorithm is summarized in
+\algref{alg:init_theta}.
+
+\begin{algorithm}[h]
+  \begin{algorithmic}[1]
+    \STATE{$gap=\frac{1}{K}$, $a_1={\cal U}(0,1e6)$, $b_1=0$,
+      $sp_1=(0,0)$, $w_0=0$, $counter=2$} \FOR{each
+      clique $c\in \cal C$} \STATE{Compute weighted clique value
+      $w_c=W_c(y_C)$} \IF{$w_c-w_{c-1}>gap$}
+    \STATE{$upbound = a_{counter}w_c+b_{counter}$\\
+      $sp_{counter}=(w_c,{\cal U}(upbound-0.5,upbound))$\\
+      Calculate $a_{counter}$ and $b_{counter}$ using
+      $sp_{counter-1}$ and $sp_{counter}$\\
+      $counter=counter+1$}
+    \ENDIF
+    \ENDFOR
+    \STATE{If $counter<K$, remaining $a$s and $b$s are all set to
+      be $a_{counter}$ and $b_{counter}$} \STATE{Calculate
+      $\btheta$ using $\{a_k,b_k\}_{k=1}^K$}
+  \end{algorithmic}
+  \caption{\label{alg:init_theta} Empirical initialization
+    algorithm for $\btheta$}
+\end{algorithm}
+
+\subsubsection{Multi-task training}
+\label{sec:multi_train}
+
+To improve accuracy and reduce over-fitting, we add a drop out
+layer between input layer and LSTM layer with a ratio of $0.2$.
+We also clip and normalize gradients during back-propagation
+stage with a maximum norm of $5.0$ to prevent gradient exploding
+issue. As pointed out by \citename{lample2016neural}, the
+question of ``when should the training schedule switch from one
+task to another task?'' or ``should each task be weighted
+equally?'' remains open. In our implementation, we follow the
+proportional sampling approach described by
+\citename{sogaard2016deep}. After a backward pass completed, we
+randomly sample a new task as well as its batch data as the next
+task to be trained. In practice, we use a proportion of
+$[0.25,0.25,0.5]$ for three tasks respectively. This mechanism
+helps multi-task model to avoid \emph{Catastrophic Forgetting}
+phenomenon which means lower level model forgets learned
+knowledge during higher level model back-propagation pass.
+
+Even though we propose an end-to-end training algorithm for HMPL
+and MRFs in section~\ref{sec:hmpl}, MRFs inference stage is still
+too slow to be trained jointly with HMPL. To overcome this
+difficulty, we implement a two stages training procedure. We
+first add a \emph{softmax} layer on top of
+$\text{DARNN}_{\text{class}}$ and train HMPL separately from
+MRFs. We use \emph{Negative Log-likelihood} as the loss function.
+At the second stage, after HMPL converge, we remove the
+\emph{softmax} layer and re-train it together with MRFs. One
+issue we must mention is that, even though we use binary MRFs
+which can only predict positive / negative price movement, we
+find there is a significant amount of time when stock price
+remains no change. We find it benefits the performance a lot if
+we treat the classification as a three classes problem rather
+than a binary classification problem during the first stage.
+Therefore, at the first stage, the \emph{softmax} layer will
+output probability for three labels: \emph{negative movement},
+\emph{no changes} and \emph{positive movement}. Since binary MRFs
+still needs a two dimension input as part of unary energy
+function, after the \emph{softmax} layer is removed, we add an
+additional linear mapping layer between logits of HMPL and MRFs
+at the second stage.
+
+\subsubsection{End-to-end NN-MRFs training}
+\label{sec:mrf_train}
+
+With converged HMPL and MRFs at hand, now we can go forward to train
+them in an end-to-end manner. We only include pairwise energy function through
+section~\ref{sec:srp} and section~\ref{sec:opt} to show a general
+application of our proposed algorithm. In the case of Chinese
+stock market, to our best knowledge there is no public available
+definition of pairwise relationship between stocks. Therefore, in
+our implementation we only use unary and higher order energy
+function. Each stock is then treated as a node in MRFs and each
+stocks group which has lead-lag relationships is treated as a
+maximum clique in MRFs. One benefit of MRFs clique is that we can
+embed domain expert knowledge about industry classification as
+maximum cliques into our model. We choose to use Tonghuashun
+industry classification \cite{ths} in our model. One subtle but
+crucial detail about modeling lead-lag effect lies in
+equation~(\ref{eqn:potential2}). Recall that $W_{\!c}(\by_c) =
+\sum_{i \in c} w_i y_i$ with $w^c_i \geq 0$ and $\sum_{i \in c}
+w^c_i = 1$ which are weights for stocks in each clique.
+Therefore, leading stocks should have a higher weights while
+lagging stocks should have lower weights. In our implementation,
+we use constituents' weight defined in CSI200, CSI500 and CSI300
+as their weights in equation~(\ref{eqn:potential2}) and normalize
+them to ensure the summation equals $1$.
+
+\subsection{Temporal Consistency Measure}
+
+Let $\by_i^T=\{y_i^1,y_i^2,...,y_i^T\}$ denotes time-series for
+stock $i$. $y_i^t\in \{0,1\}$ is the binary price movement label
+at time $t$. We segment time-series $\by_i^T$ into
+$N=\lceil\frac{T}{P}\rceil$ non-overlapping intervals
+$\{y_i^n,y_i^{n+1},...,y_i^{n+P}\}$ with fixed length $P$. For
+any two stocks $i$ and $j$, we calculate the difference
+$d_{ij}^n=\sum_n^{n+P}{y_i^n}-\sum_n^{n+P}{y_j^n}$ of how many
+times positive price movement happen in the $n$th time interval
+in each stock. Then the consistency level $c_{ij}$ between stocks
+$i$ and $j$ can be calculated as a $\ell_1\text{norm}$:
+$$c_{ij}=-\|\mathbf{d}_{ij}\|_1$$
+\noindent where
+$\mathbf{d}_{ij}=\{d_{ij}^1,d_{ij}^2,...,d_{ij}^N\}$. We
+normalize $c_{ij}$ into interval $[-1,1]$. Each entry in
+figure~\ref{fig:consistency} denotes a consistency level measure
+$c_{ij}$. The larger the $c_{ij}$ is, the higher of consistency
+level between stock $i$ and stock $j$, the color of corresponding
+entry is closer to red, and vice versa. As we mentioned in
+section~\ref{sec:intro}, the average duration of information
+arrival-conduction-integration-release process is 4.04 minutes.
+Since which stock is leading at each time interval is elusive, we
+set $P=9$ when calculating consistency measures.
+
 
 % That's all folks!
 \end{document}
