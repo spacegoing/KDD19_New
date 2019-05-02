@@ -3,10 +3,11 @@
 %\usepackage[sort,numbers]{StyFiles/natbib}
 % \setcopyright{rightsretained}
 % \settopmatter{printacmref=false}
+\acmSubmissionID{1486}
 
 %%
 \usepackage{graphicx}
-\usepackage{url}
+% \usepackage{url}
 
 % \usepackage{pifont}
 % \newcommand{\cmark}{\text{\ding{51}}}
@@ -51,32 +52,30 @@
 \usepackage{multirow}
 
 %Conference
-\acmConference[KDD 2019]{}{August 3-7 2019}{Anchorage, Alaska USA}
-\acmYear{1997}
-\copyrightyear{2018}
-\acmSubmissionID{1486}
-
+ \acmConference[KDD 2019]{}{August 3-7 2019}{Anchorage, Alaska USA}
+ \acmYear{2019}
+ \copyrightyear{2018}
 
 \begin{document}
 
-\title[RNN Higer-order MRFs for stock price prediction]{Multi-task Recurrent Neural Network and
+\title[Multi-task RNN and Higer-order MRFs for Stock Price Prediction]{Multi-task Recurrent Neural Network and
   Higher-order Markov Random Fields for Stock Price
   Prediction}
 
 % \numberofauthors{3}
 
-\author{
-\alignauthor Chang Li \\
-       \affaddr{UBTECH Sydney AI Centre, SCS, University of Sydney}\\
-       \email{chli4934@uni.sydney.edu.au}
-\alignauthor Dongjin Song \\
-       \affaddr{NEC Laboratories America, Inc.}\\
-       \email{dsong@nec-labs.com}
-\alignauthor Dacheng Tao\\
-       \affaddr{UBTECH Sydney AI Centre, SCS, University of Sydney}\\
-       \email{dacheng.tao@sydney.edu.au}
-}
-\date{15 Jan 2019}
+% \author{
+% \alignauthor Chang Li \\
+%       \affaddr{UBTECH Sydney AI Centre, SCS, University of Sydney}\\
+%       \email{chli4934@uni.sydney.edu.au}
+% \alignauthor Dongjin Song \\
+%       \affaddr{NEC Laboratories America, Inc.}\\
+%       \email{dsong@nec-labs.com}
+% \alignauthor Dacheng Tao\\
+%       \affaddr{UBTECH Sydney AI Centre, SCS, University of Sydney}\\
+%       \email{dacheng.tao@sydney.edu.au}
+% }
+% \date{15 Jan 2019}
 
 
 \begin{abstract}
@@ -84,7 +83,7 @@
   historical records, but also has complex hidden dynamics associated with other correlated stocks. Despite a substantial amount of effort has been made to understand the principles of stock price movement, few has attempted to perform stock price prediction based upon
   single stock's historical records as well as its correlated stocks. To this end, we present a multi-task recurrent neural network (RNN) and high-order Markov random fields (MRFs) to perform stock price prediction. Specifically, we first design a multi-task RNN framework to extract informative features from the raw market data of individual stock without considering any domain knowledge. Next, we employ binary MRFs with
   unary as well as weighted lower linear envelope as the higher-order energy
-  function to capture the higher-order consistence within the same clique (group) of stocks. We also derived a latent structural SVM algorithm to learn high-order MRFs in a
+  function to capture the higher-order consistency within the same clique (group) of stocks. We also derived a latent structural SVM algorithm to learn high-order MRFs in a
   polynomial number of iterations. Finally, a sub-gradient
   algorithm is employed to perform end-to-end training of RNN and
   high-order MRFs. We conduct thoroughly empirical studies based on three popular Chinese
@@ -92,7 +91,7 @@
   investigate intra-clique relationships with higher-order MRFs on stock price prediction.
 \end{abstract}
 
-\keywords{Deep Learning, Multi-variate time series prediction, Graphical Model}
+\keywords{Deep learning, Multivariate time series prediction, High-order Markov random fields}
 
 \maketitle
 
@@ -117,7 +116,7 @@ and the corresponding leading stocks; (2) Identifying lagging stocks in this gro
 price movement of each stock by jointly considering the knowledge in its correlated group and individual stock\textquotesingle s price movement at current stage.
 
 The first challenge is extremely difficult to resolve with an automatic algorithm. This is not only because it requires an expert level understanding of the finance system and the dynamics behind market news as well as stock price, but also due to lacking of training data. However, according to the well-known efficient market hypothesis~\cite{malkiel1970efficient}, stock price reflects all
-available market information. Therefore, informative stock price changes can be employed as an proximity to market news arrival. In this way, the complexity of the first challenge becomes detection of informative price changes in individual stock.
+available market information. Therefore, informative stock price changes can be employed as an proximity to market news arrival. In this way, the complexity of the first challenge is transformed to the detection of informative price changes in individual stock.
 
 Economists have spent decades trying to use patterns hidden
 inside historical trading price and volume to predict future
@@ -132,78 +131,57 @@ are motivated to manipulate market price and trap retail
 (individual) traders following their manipulated price to gain
 excess profit~\cite{sun2016decision}.
 
-To overcome those problems, we employ an end-to-end
+To overcome those problems and address the first challenge, we employ an end-to-end
 hierarchical multi-task~\cite{caruana1993multitask} RNN to
 extract informative changes from raw market price without using
 any of hand-crafted features such as technical analysis
 indicators. Good performance on price prediction relies on rich
 representations as well as the multi-task framework which can leverage
-complementary aspects from diverse tasks~\cite{sogaard2016deep}. Specifically, given the raw market price data which only contains 6 features ($i.e.$, opening
+complementary aspects from diverse tasks~\cite{sogaard2016deep}. Specifically, given the raw market price data which only contains six features ($i.e.$, opening
 price, low price, high price, closing price, volume, and amount) at each time interval, we leverage a hierarchical multi-task
 network to extract features on different tasks first and then concatenate those complementary feature vectors to make final prediction.
 
-To model lead-lag relationships and address the second and third challenges, we present a
+To model lead-lag relationships and address the other two challenges, we present a
 binary Markov Random Fields (MRFs) with weighted lower linear envelope as higher order (when the clique contains more than two
 nodes) energy function~\cite{Kohli:CVPR07,Nowozin:2011,Gould:ICML2011,gouldlearning}.
 In our implementation, we treat each stock as a node in MRFs and each stocks group which has lead-lag relationships as a maximum clique in MRFs. We use pre-defined industry classification
 list~\cite{ths} as the prior domain knowledge of each stock\textquotesingle s belonging maximum clique. Finally, the
 complexity of modeling dynamics between leading and lagging stocks becomes encouraging consistent over large cliques under
-weighted lower linear envelope potentials. Logits from hierarchical RNN networks are used as unary feature in MRFs. By minimizing the energy function which contains both unary and higher order
+weighted lower linear envelope potentials. Logits from hierarchical RNN networks are used as unary features in MRFs. By minimizing the energy function which contains both unary and higher order
 features, we are able to predict each stock\textquotesingle s future price movement by jointly considering individual market
 price trending together with lead-lag relationships.
 
-
-We verify our methodology on Chinese stock market because
-it is generally considered less mature than other developed
-countries\textquotesingle thus potentially to be more
-profitable~\cite{bessembinder1995profitability}. Even though
-immature, \citename{fangyan2012} found that the average duration
-of information arrival-conduction-integration-release process is
-$4.04$ minutes. Therefore, a minute-level frequency model is
-mandatory to leverage from lead-lag relationship. To our best
-knowledge, our model is the first one demonstrating lead-lag
-relationship at minute-level frequency on Chinese stock market.
+We justify the effectiveness of the proposed technique based on three popular Chinese stock market indexes and the proposed method outperforms baseline approaches. To the best of our knowledge, the proposed technique is the first one to investigate intra-clique relationships with higher-order MRFs on stock price prediction.
+  
+%We verify our methodology on Chinese stock market because
+%it is generally considered less mature than other developed
+%countries\textquotesingle thus potentially to be more
+%profitable~\cite{bessembinder1995profitability}. Even though immature, \citename{fangyan2012} found that the average duration of information arrival-conduction-integration-release process is $4.04$ minutes. Therefore, a minute-level frequency model ismandatory to leverage from lead-lag relationship. To our best knowledge, our model is the first one demonstrating lead-lag relationship at minute-level frequency on Chinese stock market.
 
 To summarize, the main contributions of this paper include: 
 \begin{itemize}
-\item  We propose a
-hierarchical multi-task architecture for learning stock price
-patterns without any hand-crafted features.
-\item We propose the
-first model that encode lead-lag relationship among stocks using
-higher order MRFs to the best of our knowledge. \item We design an
-algorithm to learn weighted lower linear envelope with latent
-variables as higher order energy function under latent structural
-SVMs framework. Adding latent variable into higher order function
+\item  We propose a hierarchical multi-task RNN architecture to learn stock price
+patterns without any hand-crafted feature.
+\item We propose the first model that encode lead-lag relationship among stocks using
+higher-order MRFs. 
+\item We develop an algorithm to learn weighted lower linear envelope with latent variables as higher order energy function under latent structural SVMs framework. Adding latent variable into higher order function
 enables our model to learn much richer representation than
 previous study~\cite{gouldlearning}.
 \end{itemize}
 
-
 \section{Related Works}
 \label{sec:background}
+This work is closely related to lead-lag relationship, multi-task learning, high-order MRFs, as well as latent structural SVMs.
 
-\textbf{Lead-lag Relationship} Lead-lag relationship has been
-found to be a long existence phenomenon in stock market. Many
-reasons can lead to this such as diffusion of information, sector
-(industry) rotation, investment style rotation, event driven
-trading and nonsynchronous trading
-\cite{lo1990contrarian,chordia2000trading,conrad1988time,hameed1997time}.
-Generally it is believed that lead-lag relationship is more
-prevalent for firms from the same industry
-\cite{hou2007industry}. This assumption give rise to our setting
-that we use pre-defined industry classification list \cite{ths}
-as prior domain knowledge of each stock\textquotesingle s belonging maximum
-clique. Many research \cite{brennan1993investment,hou2007industry,badrinath1995shepherds,mcqueen1996delayed}
-indicate that stocks with larger capital
-size and higher liquidity tend to be leading stocks and vice versa.
-To replicate potential lead-lag relationship, we assign each stock a
-different weight from its corresponding indexes created by the China 
-Securities Index Company, Ltd. More complicated dynamics hidden behind clique
+\textbf{Lead-lag relationship} Lead-lag relationship has been found to be a long existence phenomenon in stock market. Many reasons can lead to it such as diffusion of information, sector (industry) rotation, investment style rotation, event driven trading and asynchronous trading
+\cite{lo1990contrarian,chordia2000trading,conrad1988time,hameed1997time}. Generally it is believed that lead-lag relationship is more prevalent for firms in the same industry \cite{hou2007industry}. This assumption gives rise to our setting that we use pre-defined industry classification list \cite{ths} as prior domain knowledge of each stock\textquotesingle s belonging maximum
+clique. A lot of research \cite{brennan1993investment,hou2007industry,badrinath1995shepherds,mcqueen1996delayed}
+indicates that stocks with larger capital size and higher liquidity tend to be leading stocks and vice versa.
+To replicate potential lead-lag relationship, we assign each stock a different weight from its corresponding indexes created by the China Securities Index Company, Ltd. More complicated dynamics hidden behind clique
 of stocks are learned by higher-order MRFs.
 
-\textbf{Multi-task Learning} \citename{caruana1993multitask}
-shows that inductive knowledge learned from multiple tasks can
+\textbf{Multi-task learning} \citename{caruana1993multitask}
+showed that inductive knowledge learned from multiple tasks can
 transfer between tasks and help improving generalization on all
 tasks. Many works in Natural Language Processing (NLP) area take
 advantage of multi-task framework and achieves state-of-the-art
@@ -226,77 +204,31 @@ selection of tasks and hierarchical designations remain open for
 further research.
 
 
+%\textbf{Graphical model and neural networks} It has been known that neural networks are lacking of constraints enforcing label consistency. There are many efforts demonstrating this issue by combining CRFs and neural networks. From natural language processing community, \citename{collobert2011natural} proposed a CRF on top of feed-forward neural networks for constituency parsing task (Part-Of-Speech tagging e.g.). Due to the fixed sized window, their method only provides local information to CRF without long-term memory. For the same task, \citename{huang2015bidirectional} proposed a Bi-LSTM-CRF framework which utilizes both forward and backward information by using LSTM to extract features from raw text and make inference at a sentence level by using CRF. They achieved a more robust model and outperformed previous study. Later works~\cite{ma2016end,lample2016neural} follow their routine and improved bottom neural networks to encode both character-level and word-level features without using hand-crafted features. However, CRF they use still remains sequential. Computer vision community also put many efforts in combining benefits of Neural Networks and CRF \cite{chen2018deeplab,zheng2015conditional}. \citename{zheng2015conditional} formulated fully connected CRF with Gaussian edge potentials and mean-field inference as RNNs and integrated it into CNNs. The CRF-RNNs network can be optimized using standard back-propagation method.
 
-% \textbf{DJ Comment: the review of multi-task learning is not complete, please check earlier papers about multi-task learning and make this part more comprehensive I did not remember about the first paper, maybe it is this one: G. Obozinski, B. Taskar, and M. Jordan. Multi-task feature selection. Statistics Department, UC Berkeley,
-% Tech. Rep, 2006. You should also cite several papers of this topic from Prof. Jieping Ye's group}
-% % https://papers.nips.cc/paper/4729-multi-stage-multi-task-feature-learning.pdf
-
-% \textbf{CL comment: This has been done in section 5.2}
+%One main drawback of all above frameworks is that they only use unary and pairwise potentials. To include higher-order potentials, \citename{arnab2016higher} extends previous work by designing two types of potentials which can be formulated into CNNs when using mean-field inference. However, mean-field inference is an approximation inference method and choices of potentials are very limited under this kind of formulation. \citename{witoonchart2017application} proposed a variety of construction of graphical model and neural networks. They use graph-cut like algorithm to calculate loss-augmented inference during forward propagation of graphical models and back-propagate the error learned with Structured SVMs \cite{Joachims:ML09} to CNNs. In this paper, we follow their back-propagation method and implement an end-to-end training framework for learning higher order MRFs and neural networks using latent structural SVMs \cite{yu2009learning} algorithm.
 
 
-\textbf{Graphical Model and Neural Networks} It has been known
-that neural networks are lacking of constraints enforcing label
-consistency. There are many efforts demonstrating this issue by
-combining CRFs and neural networks. From natural language
-processing community, \citename{collobert2011natural} proposed a
-CRF on top of feed-forward neural networks for constituency
-parsing task (Part-Of-Speech tagging e.g.). Due to the fixed
-sized window, their method only provides local information to CRF
-without long-term memory. For the same task,
-\citename{huang2015bidirectional} proposed a Bi-LSTM-CRF
-framework which utilizes both forward and backward information by
-using LSTM to extract features from raw text and make inference
-at a sentence level by using CRF. They achieved a more robust
-model and outperformed previous study. Later
-works~\cite{ma2016end,lample2016neural} follow their routine and
-improved bottom neural networks to encode both character-level
-and word-level features without using hand-crafted features.
-However, CRF they use still remains sequential. Computer vision
-community also put many efforts in combining benefits of Neural
-Networks and CRF \cite{chen2018deeplab,zheng2015conditional}.
-\citename{zheng2015conditional} formulated fully connected CRF
-with Gaussian edge potentials and mean-field inference as RNNs
-and integrated it into CNNs. The CRF-RNNs network can be
-optimized using standard back-propagation method.
-
-One main drawback of all above frameworks is that they only use
-unary and pairwise potentials. To include higher-order
-potentials, \citename{arnab2016higher} extends previous work by
-designing two types of potentials which can be formulated into
-CNNs when using mean-field inference. However, mean-field
-inference is an approximation inference method and choices of
-potentials are very limited under this kind of formulation.
-\citename{witoonchart2017application} proposed a variety of
-construction of graphical model and neural networks. They use
-graph-cut like algorithm to calculate loss-augmented inference
-during forward propagation of graphical models and back-propagate
-the error learned with Structured SVMs \cite{Joachims:ML09} to
-CNNs. In this paper, we follow their back-propagation method and
-implement an end-to-end training framework for learning higher
-order MRFs and neural networks using latent structural SVMs
-\cite{yu2009learning} algorithm.
-
-
-\textbf{Higher Order Markov Random Fields} \emph{Markov Random
-  Fields} are also known as \emph{undirected graphical model}
+\textbf{Higher-order Markov random fields} Markov random
+  fields are also known as undirected graphical model
 that can be seen as a regularized joint log-probability
 distribution of arbitrary non-negative functions over a set of
 maximal cliques of the graph~\cite{bishop:2006:PRML}. Utilizing
-MRFs mainly involves three steps: defining \emph{energy
-  functions}, solving \emph{inference} problem (MAP or energy
-minimization) and \emph{learning} parameters. As for \emph{energy
-  functions}, our work focus on a class of higher-order
+MRFs mainly involves three steps: defining energy
+  functions, solving inference problem (MAP or energy
+minimization) and learning parameters. As for energy
+  functions, our work focus on a class of higher-order
 potentials defined as a concave piecewise linear function which
-is known as \emph{lower linear envelope} potentials over a clique
+is known as lower linear envelope potentials over a clique
 of binary variables. It has been raising much interest due to its
-capability of encoding consistency constraints over large subsets
+capability of encoding consistent constraints over large subsets
 of pixels in an image~\cite{Kohli:CVPR07,Nowozin:2011}. We follow
 \citename{gouldlearning} to construct a graph-cut algorithm to
 solve exact inference problem and propose our novel learning
 algorithms under latent structural SVM in
 section~\ref{sec:learning}.
 
-As the second step, in order to solve \emph{inference} problem,
+As the second step, in order to solve inference problem,
 \citename{kohli2009robust} proposed a method to represent a class
 of higher order potentials with lower (upper) linear envelope
 potentials. By introducing auxiliary
@@ -310,13 +242,13 @@ terms which can be solved with an efficient algorithm. They
 showed the energy function with auxiliary variables is submodular
 by transforming it into a quadratic pseudo-Boolean
 form~\cite{Boros:MATH02} and how
-\emph{graph-cuts}~\cite{Hammer:1965, Boykov:ICCV01,
+graph-cuts~\cite{Hammer:1965, Boykov:ICCV01,
   Freedman:CVPR05} like algorithm can be applied to do exact
-\emph{inference}.
+inference.
 
 As the third step, \citename{gouldlearning} solved
-\emph{learning} problem of lower linear envelope under the max
-margin framework~\cite{tsochantaridis2005large}. In their work
+learning problem of lower linear envelope under the max
+margin framework~\cite{tsochantaridis2005large}. In their work, 
 they pointed out the potential relationship between their
 auxiliary representation and latent SVM~\cite{yu2009learning}.
 Our work is closely based on their research. We continue to use
@@ -327,7 +259,7 @@ The learning algorithm we use is an extension of max margin
 framework which is known as ``latent structural
 SVM''~\cite{yu2009learning}.
 
-\textbf{Latent Structural SVMs} The max-margin
+\textbf{Latent structural SVMs} The max-margin
 framework~\cite{Taskar:ICML05,tsochantaridis2005large} is a
 principled approach to learn weights of pairwise MRFs.
 \citename{Szummer:ECCV08} adapted this framework to optimize
@@ -342,7 +274,7 @@ those methods can only learn higher-order functions
 approximately. In this paper we propose an algorithm to optimize
 the energy function exactly by introducing auxiliary variables
 back into the feature vector and solving the learning problem
-using the \emph{latent structural SVM framework}
+using the latent structural SVM framework
 ~\cite{yu2009learning}. To include unobserved information,
 \citename{yu2009learning} extended the joint feature function in
 structural SVM with latent variables and re-write the object
@@ -359,7 +291,7 @@ minimum.
 % latent variables reduces to solve the standard structural SVM
 % problem.
 
-The Latent Structural SVM can not take inputs data directly such
+The latent structural SVM cannot take input data directly such
 as structural SVM. In order to use it, inference algorithm, as
 well as the MRF feature function, loss function, and latent
 variable completion problem\cite{yu2009learning} need to be
@@ -410,7 +342,7 @@ unary features.
   \centering
   \includegraphics[width=1\columnwidth]{Methodology/figures/hmplmrf.png}
   \caption{\label{fig:mrfrnn} Multi-tasks DNN MRFs Architecture. Note 
-  that outputs of $\text{DARNN}_{\text{multi}}$ only corresponds to one 
+  that the output of $\text{DARNN}_{\text{multi}}$ only corresponds to one 
   node's unary feature in MRFs.}
 \end{figure}
 
@@ -936,7 +868,7 @@ standard structural SVM problem:
 \end{align}
 
 Our optimization algorithm is summarized in
-\algref{alg:learning}. As we mentioned in supplementary materials, 
+\algref{alg:learning}. As we mentioned in \appref{sec:train_detail}, 
 although we proposed an end-to-end
 subgradient algorithm is section \ref{sec:hmpl}, MRFs updated by
 such algorithm take too many iterations to converge. Therefore,
@@ -957,7 +889,7 @@ and the CCCP algorithm is only guaranteed to converge to a local
 minimum or saddle point\cite{yuille2002concave}, initialization
 of $\btheta$ might affect the performance of our algorithm. Since
 there are no theoretical solution for this problem, we propose an
-empirical initialization algorithm in supplementary material.
+empirical initialization algorithm in \appref{sec:sup_init}.
 
 
 \section{Experiment}
@@ -968,13 +900,13 @@ how we use them to construct our final input datasets. Then, we
 introduce the parameter settings of our model and other training
 details. Finally, we select four evaluation metrics and use them
 to demonstrate our framework's effectiveness by comparing with
-other baseline models.
+several baseline methods.
 
 \subsection{Dataset and Model Settings}
 \label{sec:dataset}
 
 To demonstrate the effectiveness of higher order consistency, we
-choose three exclusive the most famous stock indexes on Chinese
+choose three exclusive and the most famous stock indexes on Chinese
 stock market to build our input datasets. Their index codes are:
 CSI (China Securities Index) 200, CSI 300 and CSI 500 which
 contain 200, 500 and 300 constituent stocks respectively. The CSI
@@ -998,10 +930,11 @@ amount. \footnote{During this period, there are some stocks
 stock, the first $80\%$ days are used to construct the training
 set and the last $20\%$ days are used as testing set.
 Approximately training set and testing set contain 13 million and
-3 million samples.
+3 million samples, respectively.
 
 \begin{table}[H]
 \centering
+\small
 \caption{Technical Indicators Selection}
 \begin{tabular}{|c|c|} \hline
   Category&Indicator Name\\ \hline
@@ -1013,35 +946,32 @@ Approximately training set and testing set contain 13 million and
   \label{tab:ta}
 \end{table}
 
-To demonstrate benefits of multi-task end-to-end learning over
+To demonstrate benefits of multi-task RNN over
 manually designed technical indicators, we also need to construct
 technical indicators datasets for each of those market price
 dataset collected above. We select 8 most popular indicators, 2
-from each category~\cite{kirkpatrick2010technical} shown in table
+from each category~\cite{kirkpatrick2010technical} shown in Table
 \ref{tab:ta}. In implementation, we use open source package
 \emph{Technical Analysis Library in
   Python\footnote{https://github.com/bukosabino/ta}} to calculate
 those indicators and all hyper parameters are using package's
 default settings. After technical indicators calculation, these 8
 new features are concatenated to above market price dataset (5
-features at each minute). So the final input dataset for single
-task models contains 13 features in total. Before feeding into
-models, we normalize each stock each feature by \emph{z-score}
-function using standard deviation and mean calculated in training
-set.
+features at each minute). So the final input dataset for each single
+task model contains 13 features in total. Before feeding into
+models, we normalize each stock with \emph{z-score}
+function using standard deviation and mean calculated in the training set.
 
-For brevity, we denote market price dataset which only contains 
-$5$ features as
-\textbf{Market} and the concatenated $13$ features dataset as
+For brevity, we denote market price dataset which only contains  $5$ features as \textbf{Market} and the concatenated $13$ features dataset as
 \textbf{Indicator}. As discussed in section~\ref{sec:hmpl}, 
 closing price at time $t$ can be directly used as regression 
 target for $\text{DARNN}_{\text{trend}}$. 
-Standard Deviation of closing price with a window size of $10$ 
+Standard deviation of closing price with a window size of $10$ 
 is used as regression target for $\text{DARNN}_{\text{volat}}$.
 The dimensions of
-hidden state and cell state are 32 for both lower DARNNs and
+hidden state and cell state are 32 for $\text{DARNN}_{\text{trend}}$ as well as $\text{DARNN}_{\text{volat}}$ and
 128 for $\text{DARNN}_{\text{multi}}$. More training details are
-described in section \ref{sec:sup}
+described in appendix \ref{sec:train_detail}.
 
 \subsection{Results}
 \label{sec:res}
@@ -1049,9 +979,8 @@ described in section \ref{sec:sup}
 In order to demonstrate the effectiveness of our framework, we
 run 3 baselines on 3 different Chinese Securities Indexes with
 and without technical analysis indicators as inputs. Results are
-summarized in table~\ref{tab:result}. All models are tested on
-testing dataset. We select four metrics as evaluation
-measurements to our models. They are calculated by collecting all
+summarized in Table~\ref{tab:result}. All results are reported over the test sets. We select four metrics as evaluation
+metrics to justify the effectiveness of the proposed approach. They are calculated by collecting all
 predicted labels of constituent stocks in each CSI index.
 
 \begin{table*}[t]
@@ -1087,41 +1016,28 @@ DARNN and \textbf{Market} dataset which only contains market
 price data as inputs for HMPL and other single task models. For
 vanilla DARNN, we use a hidden size of $128$. HMPL's
 configuration is described in section~\ref{sec:multi_train}. As
-we can see in table~\ref{tab:result}, single task models (LSTM,
+we can see in Table~\ref{tab:result}, single task models (LSTM,
 LSTM\_ATTN, DARNN) tested on \textbf{Market} dataset (without
-technical analysis indicators as inputs) generally have worst
+technical analysis indicators as inputs) generally have worse
 performance on all 4 metrics. In particular, performance of DARNN
-model tested on \textbf{Indicator} dataset is constantly much
-better than the one on \textbf{Market} dataset. This proves that
+models tested on \textbf{Indicator} dataset is consistently
+better than the ones on \textbf{Market} dataset. This proves that
 even with hand-crafted features, deep learning models can still
 benefit from diversified and complementary features. By comparing
 DARNN tested on \textbf{Indicator} and HMPL on \textbf{Market},
 we can see that HMPL marginally outperforms DARNN on CSI200 and
 CSI300 index constituent stocks and is slightly worse on CSI500
 constituent stocks. We can conclude that by using multi-task
-framework deep neural networks can extract comparable features to
+RNN, we can extract equally good features compared with
 hand-crafted features.
 
 \subsubsection{Effectiveness of higher-order MRFs}
 
-As we can observe that HMPL-MRFs framework is constantly better
-than the other baselines on all 3 CSI index constituent stocks.
-It shows evidence that higher-order energy function can help with
+In Table 2, we can observe that HMPL-MRFs framework consistently outperforms other baselines on all 3 CSI index constituent stocks. It shows evidence that higher-order energy function can help with
 encoding clique level consistency thus improving overall
-prediction performance. One interesting point to note is that the
-recall rate of HMPL-MRFs is constantly lower than other
-baselines. This can be seen as a tradeoff between accuracy and
-recall rate. However, it is worth to mention that for stock price
-movement prediction, high accuracy and precision are much
-preferable than recall rate. Another interesting phenomenon is
-that HMPL-MRFs gives higher improvements on CSI200 and CSI300
-while little improvements over DARNN trained with technical
-analysis indicators on CSI500. One possible reason is that CSI200
-and CSI300 select most liquid and representative stocks in
-Chinese stock market. Those stocks exhibit much stronger higher
-order consistency than illiquid stocks. CSI500 selects small-mid
-capital stocks which are less liquid and contains much more noisy
-movements.
+prediction performance. One interesting point to note is that the recall rate of HMPL-MRFs is constantly lower than other baselines. This can be seen as a trade off between accuracy and recall rate. However, it is worth to mention that for stock price movement prediction, high accuracy and precision are much preferred than recall rate. Another interesting phenomenon is that HMPL-MRFs gives higher improvements on CSI200 and CSI300 while little improvements over DARNN trained with technical
+analysis indicators on CSI500. One possible reason is that CSI200 and CSI300 select most liquid and representative stocks in Chinese stock market. Those stocks exhibit much stronger and higher order consistency than illiquid stocks. CSI500 selects small-mid
+capital stocks which are less liquid and contains much more noisy movements.
 
 \subsubsection{Visualization of higher-order consistency}
 
@@ -1133,20 +1049,27 @@ higher-order relationship in figure~\ref{fig:consistency}.
   \centering
   \setlength{\tabcolsep}{20pt}
   \begin{tabular}{ccc}
-    \includegraphics[width=0.5\columnwidth]{Methodology/figures/mrf.png}&
-                                                                           \includegraphics[width=0.5\columnwidth]{Methodology/figures/gt.png}&
-\includegraphics[width=0.59\columnwidth]{Methodology/figures/hmpl.png}\\                                                                        {\small (a) HMPL-MRFs} & {\small (b) Ground-truth} & {\small (c) HMPL} 
-  \end{tabular}
-  \caption{\label{fig:consistency} Higher Order Consistency
-    Visualization. In figure (a), we use predicted labels of
-    HMPL-MRFs on test set as inputs. Figure (b) is calculated
-    directly from ground truth labels on test set. And figure (c)
-    is calculated using predicted labels of HMPL without MRFs on
-    test set.}
+  \includegraphics[width=0.45\columnwidth]{Methodology/figures/gt.png}&
+  
+
+    
+\includegraphics[width=0.54\columnwidth]{Methodology/figures/hmpl.png}&
+
+    \includegraphics[width=0.45\columnwidth]{Methodology/figures/mrf.png}
+\\                                                                        {\small (a) Ground-truth} & {\small (b) HMPL } & {\small (c) HMPL-MRFs} 
+  \end{tabular}\vspace{-2mm}
+  \caption{\label{fig:consistency} Higher order consistency
+    visualization. Figure (a) is calculated
+    directly from ground truth labels on test set.
+    Figure (b)
+    is calculated using predicted labels of HMPL without MRFs on the
+    test set.
+    In figure (c), we use predicted labels of
+    HMPL-MRFs on test set as inputs.}\vspace{0mm}
 \end{figure*}
 
-We first select two sectors: Nonferrous Metal sector, which
-contains 10 constituent stocks, and Infrastructure sector, which
+We first select two sectors: nonferrous metal sector, which
+contains 10 constituent stocks, and infrastructure sector, which
 contains 35 constituent stocks from CSI300 index \footnote{These
   two sectors are selected only because painting many sectors in
   one figure would be too messy to interpret and those two
@@ -1155,16 +1078,37 @@ contains 35 constituent stocks from CSI300 index \footnote{These
   other sectors}. We then measure consistency level between each
 two of these constituent stocks. In order to capture their
 temporal relationship, we propose a novel consistency measure
-which is calculated on temporal intervals in supplementary 
-materials.
+which is calculated on temporal intervals.
 % Let $\C\in\{\text{Nonferrous Metal},\text{Infrastructure}\}$
 % denotes one clique. $\by_c=\{\by_i \in \C\}$ denotes a set of
 % time-series $\by_i^T=\{y_i^1,y_i^2,...,y_i^T\}$ for all stocks
 
-As we can see in figure (b), there is a significant red square
+Let $\by_i^T=\{y_i^1,y_i^2,...,y_i^T\}$ denotes time-series for
+stock $i$. $y_i^t\in \{0,1\}$ is the binary price movement label
+at time $t$. We segment time-series $\by_i^T$ into
+$N=\lceil\frac{T}{P}\rceil$ non-overlapping intervals
+$\{y_i^n,y_i^{n+1},...,y_i^{n+P}\}$ with fixed length $P$. For
+any two stocks $i$ and $j$, we calculate the difference
+$d_{ij}^n=\sum_n^{n+P}{y_i^n}-\sum_n^{n+P}{y_j^n}$ of how many
+times positive price movement happen in the $n$th time interval
+in each stock. Then the consistency level $c_{ij}$ between stocks
+$i$ and $j$ can be calculated as a $\ell_1\text{norm}$:
+$$c_{ij}=-\|\mathbf{d}_{ij}\|_1$$
+\noindent where
+$\mathbf{d}_{ij}=\{d_{ij}^1,d_{ij}^2,...,d_{ij}^N\}$. We
+normalize $c_{ij}$ into interval $[-1,1]$. Each entry in
+figure~\ref{fig:consistency} denotes a consistency level measure
+$c_{ij}$. The larger the $c_{ij}$ is, the higher of consistency
+level between stock $i$ and stock $j$, the color of corresponding
+entry is closer to red, and vice versa. As we mentioned, the average duration of information
+arrival-conduction-integration-release process is 4.04 minutes.
+Since which stock is leading at each time interval is elusive, we
+set $P=9$ when calculating consistency measures.
+
+As we can see in figure (a), there is a significant red square
 area, which means ground-truth heat-map shows strong intra-clique
-consistency. This is an evidence that higher-order relationship
-do exist within clique of stocks. However, in figure (c), the red
+consistency. This is an evidence that higher-order relationships
+do exist within clique of stocks. However, in figure (b), the red
 square area is fragmented into many little pieces. The whole
 area's color is closer to blue when compared to ground-truth
 heat-map, which means that HMPL captures little higher-order consistency.
@@ -1175,13 +1119,14 @@ model mainly comes from unary features and it fails to capture
 higher order consistency relationships lies in clique of stocks.
 On the contrary, even though HMPL-MRFs model's accuracy on CSI300
 index is only $2.35\%$ better than HMPL model, we can observe
-that heat-map (a) is more close to ground-truth heat-map than
-heat-map (c). There is a much clear red square and the number of
-small fragments in red area is also less than figure (c). We can
+that heat-map (c) is more close to ground-truth heat-map than
+heat-map (b). There is a much clear red square and the number of
+small fragments in red area is also less than figure (b). We can
 conclude that HMPL-MRFs models learn to utilize both unary
 features from HMPL as well as higher-order relationships encoded
 in MRFs.
 
+\vspace{-3mm}
 \section{Conclusion}
 \label{sec:conc}
 
@@ -1202,18 +1147,8 @@ market. The proposed HMPL-MRFs achieves best accuracy on all
 three indexes.
 
 Our work gives insights to a number of directions for future
-research. Multi-head self-attention mechanism proposed in
-transformer model\cite{vaswani2017attention} has been a rising
-star and achieved state-of-the-art performance on various tasks
-in sequence to sequence learning area. It would be interesting to
-compare transformer with DARNN in our multi-task configuration.
-Another obvious extension is to apply our method on a multi-label
-MRFs to help with 3-classes price movement prediction. More
-interesting is the implicit relationship between the expert
-defined index list which we used as cliques and Graph RNN
-\cite{you2018graphrnn}. Investigating under this direction could
-help further diminishing domain knowledge required by our
-framework.
+research. One obvious extension is to apply our method to a multi-label
+MRFs to help with 3-classes price movement prediction. A More interesting direction is to investigate the implicit relationship between the expert defined index list and Graph RNN \cite{you2018graphrnn}. Investigating under this direction could help further diminishing domain knowledge required by our framework.
 
 
 
@@ -1221,13 +1156,14 @@ framework.
 %\bibliographystyle{plainnat}
 \bibliography{Bibs/thesis,Bibs/long,Bibs/scene,Bibs/proposal,Bibs/fin}
 
+\newpage
 
 \appendix
 
-\subsection{Training Details}
+\section{Training Details}
 \label{sec:train_detail}
 
-\subsubsection{Initialization of lower linear envelope}
+\subsection{Initialization of lower linear envelope}
 \label{sec:sup_init}
 
 We assume that the more evenly distributed of $W_c(Y_c)$ where
@@ -1264,7 +1200,7 @@ equation~\eqref{eq:llsvm_param}. This algorithm is summarized in
     algorithm for $\btheta$}
 \end{algorithm}
 
-\subsubsection{Multi-task training}
+\subsection{Multi-task training}
 \label{sec:multi_train}
 
 To improve accuracy and reduce over-fitting, we add a drop out
@@ -1307,7 +1243,7 @@ function, after the \emph{softmax} layer is removed, we add an
 additional linear mapping layer between logits of HMPL and MRFs
 at the second stage.
 
-\subsubsection{End-to-end NN-MRFs training}
+\subsection{End-to-end NN-MRFs training}
 \label{sec:mrf_train}
 
 With converged HMPL and MRFs at hand, now we can go forward to train
@@ -1333,30 +1269,6 @@ we use constituents' weight defined in CSI200, CSI500 and CSI300
 as their weights in equation~(\ref{eqn:potential2}) and normalize
 them to ensure the summation equals $1$.
 
-\subsection{Temporal Consistency Measure}
-
-Let $\by_i^T=\{y_i^1,y_i^2,...,y_i^T\}$ denotes time-series for
-stock $i$. $y_i^t\in \{0,1\}$ is the binary price movement label
-at time $t$. We segment time-series $\by_i^T$ into
-$N=\lceil\frac{T}{P}\rceil$ non-overlapping intervals
-$\{y_i^n,y_i^{n+1},...,y_i^{n+P}\}$ with fixed length $P$. For
-any two stocks $i$ and $j$, we calculate the difference
-$d_{ij}^n=\sum_n^{n+P}{y_i^n}-\sum_n^{n+P}{y_j^n}$ of how many
-times positive price movement happen in the $n$th time interval
-in each stock. Then the consistency level $c_{ij}$ between stocks
-$i$ and $j$ can be calculated as a $\ell_1\text{norm}$:
-$$c_{ij}=-\|\mathbf{d}_{ij}\|_1$$
-\noindent where
-$\mathbf{d}_{ij}=\{d_{ij}^1,d_{ij}^2,...,d_{ij}^N\}$. We
-normalize $c_{ij}$ into interval $[-1,1]$. Each entry in
-figure~\ref{fig:consistency} denotes a consistency level measure
-$c_{ij}$. The larger the $c_{ij}$ is, the higher of consistency
-level between stock $i$ and stock $j$, the color of corresponding
-entry is closer to red, and vice versa. As we mentioned in
-section~\ref{sec:intro}, the average duration of information
-arrival-conduction-integration-release process is 4.04 minutes.
-Since which stock is leading at each time interval is elusive, we
-set $P=9$ when calculating consistency measures.
 
 
 % That's all folks!
